@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'feynman_session_page.dart';
-
+import 'pomodoro_session_page.dart';
+import 'active_recall_session_page.dart';
+import 'blurting_session_page.dart';
+import 'quiz_page.dart';
 
 class NotebookPage extends StatelessWidget {
   const NotebookPage({super.key});
@@ -20,7 +23,7 @@ class NotebookPage extends StatelessWidget {
       'title': 'Sejarah Majapahit',
       'date': '25 Feb 2026',
       'preview': '...',
-      'method': 'Feynman',
+      'method': 'Feynman Technique',
       'methodColor': Color(0xFFD32F2F),
       'methodBg': Color(0xFFFFF3F3),
       'methodIcon': Icons.record_voice_over_outlined,
@@ -44,6 +47,22 @@ class NotebookPage extends StatelessWidget {
       'methodIcon': Icons.psychology_outlined,
     },
   ];
+
+  // ── Helper: routing ke session page yang benar berdasarkan method ──
+  static Widget _sessionPageFor(String method, String title) {
+    switch (method) {
+      case 'Pomodoro':
+        return PomodoroSessionPage(topicTitle: title);
+      case 'Active Recall':
+        return ActiveRecallSessionPage(topicTitle: title);
+      case 'Feynman Technique':
+        return FeynmanSessionPage(topicTitle: title);
+      case 'Blurting':
+        return BlurtingSessionPage(topicTitle: title);
+      default:
+        return FeynmanSessionPage(topicTitle: title);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +143,12 @@ class NotebookPage extends StatelessWidget {
         ),
       ),
 
-      // ── FAB ──
+      // ── FAB: ke QuizPage agar user pilih metode dulu ──
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const FeynmanSessionPage()),
+            MaterialPageRoute(builder: (_) => const QuizPage()),
           );
         },
         backgroundColor: const Color(0xFF2196F3),
@@ -278,11 +297,14 @@ class NotebookPage extends StatelessWidget {
   Widget _buildNoteCard(BuildContext context, Map<String, dynamic> note) {
     return GestureDetector(
       onTap: () {
+        // ✅ Routing dinamis berdasarkan method di data note
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                FeynmanSessionPage(topicTitle: note['title'] as String),
+            builder: (_) => _sessionPageFor(
+              note['method'] as String,
+              note['title'] as String,
+            ),
           ),
         );
       },

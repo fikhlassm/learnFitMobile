@@ -1,10 +1,39 @@
 import 'package:flutter/material.dart';
 import 'feynman_session_page.dart';
+import 'pomodoro_session_page.dart';
+import 'active_recall_session_page.dart';
+import 'blurting_session_page.dart';
 
 class QuizResultPage extends StatelessWidget {
   final String method;
+  final String topicTitle;
 
-  const QuizResultPage({super.key, required this.method});
+  const QuizResultPage({
+    super.key,
+    required this.method,
+    this.topicTitle = '',
+  });
+
+  // ── Routing ke session page yang benar ──
+  void _navigateToSession(BuildContext context) {
+    final topic =
+        topicTitle.isNotEmpty ? topicTitle : _defaultTopic[method] ?? 'Materi';
+
+    final Widget page;
+    if (method == 'Pomodoro') {
+      page = PomodoroSessionPage(topicTitle: topic);
+    } else if (method == 'Active Recall') {
+      page = ActiveRecallSessionPage(topicTitle: topic);
+    } else if (method == 'Feynman Technique') {
+      page = FeynmanSessionPage(topicTitle: topic);
+    } else if (method == 'Blurting') {
+      page = BlurtingSessionPage(topicTitle: topic);
+    } else {
+      page = PomodoroSessionPage(topicTitle: topic);
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +135,6 @@ class QuizResultPage extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Step number
                               Container(
                                 width: 36,
                                 height: 36,
@@ -126,7 +154,6 @@ class QuizResultPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 14),
-                              // Step content
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,13 +195,8 @@ class QuizResultPage extends StatelessWidget {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () {
-                   Navigator.push(context,
-  MaterialPageRoute(builder: (_) => const FeynmanSessionPage(
-    topicTitle: 'Sejarah Majapahit',
-  )),
-);
-                  },
+                  // ✅ Panggil _navigateToSession, BUKAN hardcode FeynmanSessionPage
+                  onPressed: () => _navigateToSession(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
                     shape: RoundedRectangleBorder(
@@ -207,6 +229,14 @@ class QuizResultPage extends StatelessWidget {
   }
 }
 
+// ── Default topic per method ──
+const Map<String, String> _defaultTopic = {
+  'Pomodoro': 'Fungsi Eksponensial',
+  'Active Recall': 'Rumus Fisika Semester 2',
+  'Feynman Technique': 'Sejarah Majapahit',
+  'Blurting': 'Struktur Sel',
+};
+
 // ── Method Data ──
 const Map<String, Map<String, dynamic>> _methodData = {
   'Pomodoro': {
@@ -237,7 +267,8 @@ const Map<String, Map<String, dynamic>> _methodData = {
       },
       {
         'title': 'Buat Flashcard',
-        'desc': 'Tulis pertanyaan dan jawaban di sisi berbeda untuk menguji diri.'
+        'desc':
+            'Tulis pertanyaan dan jawaban di sisi berbeda untuk menguji diri.'
       },
       {
         'title': 'Kuis Berkala',
@@ -259,7 +290,8 @@ const Map<String, Map<String, dynamic>> _methodData = {
       },
       {
         'title': 'Jelaskan',
-        'desc': 'Jelaskan materi tersebut seolah-olah kamu mengajar anak usia 10 tahun.'
+        'desc':
+            'Jelaskan materi tersebut seolah-olah kamu mengajar anak usia 10 tahun.'
       },
       {
         'title': 'Evaluasi',
