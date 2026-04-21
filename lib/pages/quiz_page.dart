@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'quiz_result_page.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -11,10 +12,17 @@ class _QuizPageState extends State<QuizPage> {
   int _currentQuestion = 0;
   int? _selectedAnswer;
 
+  // Tracks score per method: index 0=Pomodoro, 1=Active Recall, 2=Feynman, 3=Blurting
+  final List<int> _scores = [0, 0, 0, 0];
+
+  // Each answer maps to a method index
+  // 0 = Pomodoro (visual / focus)
+  // 1 = Active Recall (auditory / group)
+  // 2 = Feynman Technique (read-write)
+  // 3 = Blurting (kinesthetic)
   final List<Map<String, dynamic>> _questions = [
     {
-      'question':
-          'Ketika belajar hal baru, kamu lebih mudah memahami melalui?',
+      'question': 'Ketika belajar hal baru, kamu lebih mudah memahami melalui?',
       'answers': [
         {'icon': Icons.visibility_outlined, 'text': 'Melihat gambar atau diagram'},
         {'icon': Icons.groups_outlined, 'text': 'Mendengar penjelasan langsung'},
@@ -23,8 +31,7 @@ class _QuizPageState extends State<QuizPage> {
       ],
     },
     {
-      'question':
-          'Saat mengingat sesuatu, kamu biasanya mengingat melalui?',
+      'question': 'Saat mengingat sesuatu, kamu biasanya mengingat melalui?',
       'answers': [
         {'icon': Icons.visibility_outlined, 'text': 'Gambaran visual di kepala'},
         {'icon': Icons.groups_outlined, 'text': 'Suara atau kata-kata'},
@@ -33,8 +40,7 @@ class _QuizPageState extends State<QuizPage> {
       ],
     },
     {
-      'question':
-          'Ketika mengikuti instruksi, kamu lebih suka?',
+      'question': 'Ketika mengikuti instruksi, kamu lebih suka?',
       'answers': [
         {'icon': Icons.visibility_outlined, 'text': 'Melihat diagram langkah-langkah'},
         {'icon': Icons.groups_outlined, 'text': 'Mendengar penjelasan verbal'},
@@ -43,8 +49,7 @@ class _QuizPageState extends State<QuizPage> {
       ],
     },
     {
-      'question':
-          'Ketika bosan, kamu biasanya?',
+      'question': 'Ketika bosan, kamu biasanya?',
       'answers': [
         {'icon': Icons.visibility_outlined, 'text': 'Melamun atau melihat sekeliling'},
         {'icon': Icons.groups_outlined, 'text': 'Mengobrol atau bersenandung'},
@@ -54,24 +59,44 @@ class _QuizPageState extends State<QuizPage> {
     },
   ];
 
+  // Method names mapped by index
+  static const List<String> _methods = [
+    'Pomodoro',
+    'Active Recall',
+    'Feynman Technique',
+    'Blurting',
+  ];
+
   int get _totalQuestions => _questions.length;
-
   double get _progress => (_currentQuestion + 1) / _totalQuestions;
+  String get _progressLabel => '${((_progress) * 100).round()}%';
+  bool get _isLastQuestion => _currentQuestion == _totalQuestions - 1;
 
-  String get _progressLabel =>
-      '${((_progress) * 100).round()}%';
+  String _determineResult() {
+    int maxScore = _scores.reduce((a, b) => a > b ? a : b);
+    int winnerIndex = _scores.indexOf(maxScore);
+    return _methods[winnerIndex];
+  }
 
   void _next() {
     if (_selectedAnswer == null) return;
 
-    if (_currentQuestion < _totalQuestions - 1) {
+    // Accumulate score for selected answer's method
+    _scores[_selectedAnswer!]++;
+
+    if (!_isLastQuestion) {
       setState(() {
         _currentQuestion++;
         _selectedAnswer = null;
       });
     } else {
-      // TODO: Process results and navigate to result page
-      Navigator.pop(context);
+      final result = _determineResult();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QuizResultPage(method: result),
+        ),
+      );
     }
   }
 
@@ -206,7 +231,6 @@ class _QuizPageState extends State<QuizPage> {
                             ),
                             child: Row(
                               children: [
-                                // Icon container
                                 Container(
                                   width: 36,
                                   height: 36,
@@ -221,22 +245,18 @@ class _QuizPageState extends State<QuizPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 14),
-                                // Answer text
                                 Expanded(
                                   child: Text(
                                     answer['text'],
                                     style: TextStyle(
                                       fontSize: 13.5,
-                                      color: isSelected
-                                          ? Colors.black87
-                                          : Colors.black87,
+                                      color: Colors.black87,
                                       fontWeight: isSelected
                                           ? FontWeight.w500
                                           : FontWeight.w400,
                                     ),
                                   ),
                                 ),
-                                // Radio button
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   width: 22,
@@ -270,7 +290,6 @@ class _QuizPageState extends State<QuizPage> {
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
               child: Column(
                 children: [
-                  // Tombol Selanjutnya
                   SizedBox(
                     width: double.infinity,
                     height: 54,
@@ -289,9 +308,7 @@ class _QuizPageState extends State<QuizPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _currentQuestion < _totalQuestions - 1
-                                ? 'Selanjutnya'
-                                : 'Selesai',
+                            _isLastQuestion ? 'Lihat Hasilnya' : 'Selanjutnya',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -308,7 +325,6 @@ class _QuizPageState extends State<QuizPage> {
 
                   const SizedBox(height: 10),
 
-                  // Hint text
                   Text(
                     'Jawabanmu membantu LearnFit menyesuaikan metode belajarmu.',
                     style: TextStyle(

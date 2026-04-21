@@ -236,7 +236,6 @@ class WelcomePage extends StatelessWidget {
 
             const Spacer(),
 
-            // ── Lakukan Nanti ──
             GestureDetector(
               onTap: () {
                 // TODO: Navigate to home
