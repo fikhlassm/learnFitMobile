@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'notebook_page.dart';
 
 class FeynmanSessionPage extends StatefulWidget {
   final String topicTitle;
@@ -18,7 +19,6 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   bool _isLoading = false;
   String _responseText = '';
 
-  // Simulated AI responses
   static const List<String> _sampleResponses = [
     'Pemahamanmu sudah cukup baik! Kamu berhasil menjelaskan konsep utama dengan bahasa yang sederhana. Namun, ada beberapa poin yang bisa diperdalam:\n\n• Coba jelaskan lebih detail tentang sistem pemerintahan Majapahit\n• Hubungkan peran Gajah Mada dengan ekspansi wilayah\n• Tambahkan konteks tentang kejatuhan kerajaan\n\nSecara keseluruhan, pemahaman dasarmu sudah solid. Perkuat dengan detail spesifik!',
     'Penjelasanmu menunjukkan pemahaman yang kuat terhadap materi ini. Kamu mampu menyederhanakan konsep kompleks dengan baik.\n\nBeberapa saran untuk penguatan:\n• Tambahkan contoh konkret untuk mendukung penjelasanmu\n• Perhatikan urutan kronologis peristiwa\n• Coba hubungkan dengan konteks yang lebih luas\n\nTerus latih kemampuan ini — kamu sudah di jalur yang benar!',
@@ -26,20 +26,25 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
 
   void _cekPemahaman() async {
     if (_notesController.text.trim().isEmpty) return;
-
     setState(() {
       _isLoading = true;
       _showResponse = false;
     });
-
     await Future.delayed(const Duration(seconds: 2));
-
     setState(() {
       _isLoading = false;
       _showResponse = true;
-      _responseText = _sampleResponses[
-          DateTime.now().second % _sampleResponses.length];
+      _responseText =
+          _sampleResponses[DateTime.now().second % _sampleResponses.length];
     });
+  }
+
+  void _selesaikanSesi() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const NotebookPage()),
+      (route) => false,
+    );
   }
 
   @override
@@ -55,38 +60,25 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── App Bar ──
+            const SizedBox(height: 16),
             _buildAppBar(),
-
-            // ── Content ──
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
-                  // ── Catatan Section ──
                   _buildCatatanSection(),
-
                   const SizedBox(height: 12),
-
-                  // ── Tambahkan file materi ──
                   _buildAddFileButton(),
-
                   const SizedBox(height: 12),
-
-                  // ── Response Section ──
                   if (_isLoading) _buildLoadingCard(),
                   if (_showResponse && !_isLoading) _buildResponseCard(),
                 ],
               ),
             ),
-
-            // ── Bottom: Selesaikan Sesi ──
             _buildBottomButton(),
           ],
         ),
       ),
-
-      // ── Bottom Nav ──
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -143,10 +135,8 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -161,33 +151,24 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
                 ),
                 Text(
                   'Otomatis tersimpan',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: Colors.grey[400],
-                  ),
+                  style: TextStyle(fontSize: 11.5, color: Colors.grey[400]),
                 ),
               ],
             ),
           ),
-
           const Divider(height: 1, color: Color(0xFFF0F0F0)),
-
-          // TextField
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _notesController,
               maxLines: 8,
               style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-                height: 1.6,
-              ),
+                  fontSize: 14, color: Colors.black87, height: 1.6),
               decoration: InputDecoration(
                 hintText:
                     'Tuliskan pemahamanmu mengenai materi yang kamu pelajari...',
-                hintStyle:
-                    TextStyle(color: Colors.grey[400], fontSize: 14, height: 1.6),
+                hintStyle: TextStyle(
+                    color: Colors.grey[400], fontSize: 14, height: 1.6),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -195,8 +176,6 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
               onChanged: (_) => setState(() {}),
             ),
           ),
-
-          // Cek Pemahaman button
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
@@ -218,10 +197,9 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
                 child: const Text(
                   'Cek Pemahaman',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white),
                 ),
               ),
             ),
@@ -233,12 +211,9 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
 
   Widget _buildAddFileButton() {
     return GestureDetector(
-      onTap: () {
-        // TODO: File picker
-      },
+      onTap: () {},
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -259,8 +234,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFCCCCCC), width: 1.5),
               ),
-              child: const Icon(Icons.add,
-                  size: 16, color: Color(0xFF999999)),
+              child: const Icon(Icons.add, size: 16, color: Color(0xFF999999)),
             ),
           ],
         ),
@@ -288,13 +262,8 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            'Menganalisis pemahamanmu...',
-            style: TextStyle(
-              fontSize: 13.5,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text('Menganalisis pemahamanmu...',
+              style: TextStyle(fontSize: 13.5, color: Colors.grey[600])),
         ],
       ),
     );
@@ -325,10 +294,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
           Text(
             _responseText,
             style: const TextStyle(
-              fontSize: 13.5,
-              color: Colors.black87,
-              height: 1.6,
-            ),
+                fontSize: 13.5, color: Colors.black87, height: 1.6),
           ),
         ],
       ),
@@ -343,9 +309,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
-          onPressed: () {
-            // TODO: Selesaikan sesi
-          },
+          onPressed: _selesaikanSesi,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFDDE3EE),
             shape: RoundedRectangleBorder(
@@ -353,16 +317,13 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
             ),
             elevation: 0,
           ),
-          child: Row(
+          child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.check_circle_outline_rounded,
-                color: Color(0xFF5B7BB8),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.check_circle_outline_rounded,
+                  color: Color(0xFF5B7BB8), size: 20),
+              SizedBox(width: 8),
+              Text(
                 'Selesaikan Sesi',
                 style: TextStyle(
                   fontSize: 15,
@@ -408,32 +369,22 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   }
 
   Widget _navItem(IconData icon, String label, bool isActive) {
-    return GestureDetector(
-      onTap: () {},
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon,
             size: 24,
-            color: isActive
-                ? const Color(0xFF2196F3)
-                : Colors.grey[400],
+            color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
           ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight:
-                  isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isActive
-                  ? const Color(0xFF2196F3)
-                  : Colors.grey[400],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
