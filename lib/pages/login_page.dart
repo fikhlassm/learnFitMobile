@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'registration_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -115,7 +116,8 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 hintText: 'nama@gmail.com',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                prefixIcon: Icon(Icons.mail_outline, color: Colors.grey[400], size: 20),
+                prefixIcon:
+                    Icon(Icons.mail_outline, color: Colors.grey[400], size: 20),
                 filled: true,
                 fillColor: const Color(0xFFF5F5F5),
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -156,7 +158,8 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 hintText: '••••••',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[400], size: 20),
+                prefixIcon:
+                    Icon(Icons.lock_outline, color: Colors.grey[400], size: 20),
                 suffixIcon: IconButton(
                   onPressed: () {
                     setState(() => _obscurePassword = !_obscurePassword);
@@ -251,7 +254,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // TODO: Navigator.pushNamed(context, '/register');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const RegistrationPage()),
+                    );
                   },
                   child: const Text(
                     'Daftar Sekarang',

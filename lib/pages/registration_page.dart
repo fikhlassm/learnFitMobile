@@ -1,0 +1,409 @@
+import 'package:flutter/material.dart';
+import 'verification_page.dart';
+
+class RegistrationPage extends StatefulWidget {
+  const RegistrationPage({super.key});
+
+  @override
+  State<RegistrationPage> createState() => _RegistrationPageState();
+}
+
+class _RegistrationPageState extends State<RegistrationPage> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _agreeToTerms = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          children: [
+            const SizedBox(height: 16),
+
+            // ── App Bar Row ──
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.chevron_left,
+                        color: Color(0xFF2196F3),
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ),
+                const Text(
+                  'LearnFit',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 28),
+
+            // ── Title ──
+            const Text(
+              'Buat Akun',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: Colors.black87,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              'Mulai perjalanan belajar yang teratur.',
+              style: TextStyle(
+                fontSize: 13.5,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // ── Nama Lengkap Field ──
+            Text(
+              'Nama Lengkap',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _nameController,
+              keyboardType: TextInputType.name,
+              textCapitalization: TextCapitalization.words,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'Nama kamu',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon:
+                    Icon(Icons.person_outline, color: Colors.grey[400], size: 20),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2196F3),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Email Field ──
+            Text(
+              'Email',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'nama@email.com',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon:
+                    Icon(Icons.mail_outline, color: Colors.grey[400], size: 20),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2196F3),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Password Field ──
+            Text(
+              'Password',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'Min. 8 karakter',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon:
+                    Icon(Icons.lock_outline, color: Colors.grey[400], size: 20),
+                suffixIcon: IconButton(
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: Colors.grey[400],
+                    size: 20,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2196F3),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Konfirmasi Password Field ──
+            Text(
+              'Konfirmasi Password',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: _obscureConfirmPassword,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'Min. 8 karakter',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon:
+                    Icon(Icons.lock_outline, color: Colors.grey[400], size: 20),
+                suffixIcon: IconButton(
+                  onPressed: () => setState(() =>
+                      _obscureConfirmPassword = !_obscureConfirmPassword),
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: Colors.grey[400],
+                    size: 20,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2196F3),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Syarat & Ketentuan ──
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: Checkbox(
+                    value: _agreeToTerms,
+                    onChanged: (val) =>
+                        setState(() => _agreeToTerms = val ?? false),
+                    activeColor: const Color(0xFF2196F3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    side: BorderSide(color: Colors.grey[400]!, width: 1.5),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.grey[600],
+                        height: 1.5,
+                      ),
+                      children: const [
+                        TextSpan(text: 'Saya setuju dengan '),
+                        TextSpan(
+                          text: 'Syarat & Ketentuan',
+                          style: TextStyle(
+                            color: Color(0xFF2196F3),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        TextSpan(text: ' serta '),
+                        TextSpan(
+                          text: 'Kebijakan Privasi',
+                          style: TextStyle(
+                            color: Color(0xFF2196F3),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        TextSpan(text: ' LearnFit.'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Tombol Buat Akun ──
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _agreeToTerms
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VerificationPage(
+                              email: _emailController.text.trim(),
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2196F3),
+                  disabledBackgroundColor:
+                      const Color(0xFF2196F3).withOpacity(0.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Buat Akun',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Sudah punya akun ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Sudah punya akun?  ',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Text(
+                    'Masuk',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF2196F3),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
