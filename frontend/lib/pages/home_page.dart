@@ -1,5 +1,346 @@
 import 'package:flutter/material.dart';
+import 'notebook_page.dart';
+import 'statistics_page.dart';
+import 'profile_page.dart';
+import 'pomodoro_session_page.dart';
 
+class HomePage extends StatefulWidget {
+  final int initialIndex;
+  const HomePage({super.key, this.initialIndex = 0});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
+
+  void _onNavTap(int index) => setState(() => _selectedIndex = index);
+
+  @override
+  Widget build(BuildContext context) {
+    // Pass onNavTap so child pages can also switch tabs
+    final pages = [
+      _HomeContent(onNavTap: _onNavTap),
+      const NotebookPage(),
+      const StatisticsPage(),
+      const ProfilePage(),
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      body: IndexedStack(index: _selectedIndex, children: pages),
+      bottomNavigationBar: _BottomNav(
+        selectedIndex: _selectedIndex,
+        onTap: _onNavTap,
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════ Bottom Nav ═══════════════════════════
+class _BottomNav extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+  const _BottomNav({required this.selectedIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 14,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home', isActive: selectedIndex == 0, onTap: () => onTap(0)),
+              _NavItem(icon: Icons.article_outlined, activeIcon: Icons.article_rounded, label: 'Notebook', isActive: selectedIndex == 1, onTap: () => onTap(1)),
+              _NavItem(icon: Icons.track_changes_outlined, activeIcon: Icons.track_changes_rounded, label: 'Goals', isActive: selectedIndex == 2, onTap: () => onTap(2)),
+              _NavItem(icon: Icons.person_outline, activeIcon: Icons.person_rounded, label: 'Profile', isActive: selectedIndex == 3, onTap: () => onTap(3)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon, activeIcon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  const _NavItem({required this.icon, required this.activeIcon, required this.label, required this.isActive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(isActive ? activeIcon : icon, size: 24,
+                color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
+            const SizedBox(height: 3),
+            Text(label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════ Home Content ═══════════════════════════
+class _HomeContent extends StatelessWidget {
+  final ValueChanged<int> onNavTap;
+  const _HomeContent({required this.onNavTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAppBar(),
+            const SizedBox(height: 6),
+            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+            const SizedBox(height: 20),
+            _buildStatsRow(),
+            const SizedBox(height: 16),
+            _buildProgressCard(context),
+            const SizedBox(height: 20),
+            _buildRecommendationSection(context),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.grey.shade200,
+            child: const Icon(Icons.person, color: Colors.grey, size: 28),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Hi, Amin!',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black87)),
+                Text('Bagaimana kabarmu hari ini?',
+                    style: TextStyle(fontSize: 12.5, color: Color(0xFF9E9E9E))),
+              ],
+            ),
+          ),
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)],
+            ),
+            child: const Icon(Icons.notifications_none_rounded, color: Colors.black87, size: 22),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          _statCard(Icons.local_fire_department_rounded, const Color(0xFFFF7043), 'Streak', '12 Hari'),
+          const SizedBox(width: 12),
+          _statCard(Icons.access_time_rounded, const Color(0xFF2196F3), 'Daily Focus', '4.5j'),
+          const SizedBox(width: 12),
+          _statCard(Icons.auto_awesome_rounded, const Color(0xFF9C27B0), 'Mastery', '86 Cards'),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard(IconData icon, Color color, String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontSize: 10.5, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Progress Hari Ini',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('Kamu Mencapai 75% Target Harian!',
+                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.85))),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: 0.75,
+                backgroundColor: Colors.white.withOpacity(0.3),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                minHeight: 7,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('3 / 4 TUGAS SELESAI',
+                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85), fontWeight: FontWeight.w600)),
+                Text('TERSISA 1J 15M',
+                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85))),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendationSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Rekomendasi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
+          const SizedBox(height: 12),
+          _recCard(context,
+            icon: Icons.timer_outlined,
+            iconColor: const Color(0xFF2196F3),
+            title: 'Pomodoro',
+            subtitle: 'Teknik yang membagi pekerjaan ke dalam sesi fokus 25 menit dan istirahat singkat.',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PomodoroSessionPage())),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recCard(BuildContext context, {required IconData icon, required Color iconColor, required String title, required String subtitle, required VoidCallback onTap}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(color: const Color(0xFF2196F3), borderRadius: BorderRadius.circular(20)),
+              child: const Text('Mulai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
 
