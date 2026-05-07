@@ -18,6 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('grade');
             $table->string('password');
+            $table->date('last_study_date');
+            $table->integer('current_streak');           
             $table->rememberToken();
             $table->timestamps();
         });
