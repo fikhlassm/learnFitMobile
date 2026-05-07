@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\StudySession;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class QuizResult extends Model
+class Flashcard extends Model
 {
     use HasFactory;
 
     protected $guarded = [];
 
-    public function studyTechnique() : BelongsTo
+    public function studySession() : BelongsTo
     {
-        return $this->belongsTo(StudyTechnique::class);
+        return $this->belongsTo(StudySession::class);
     }
 }

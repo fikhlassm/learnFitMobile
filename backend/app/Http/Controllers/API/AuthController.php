@@ -13,13 +13,13 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|min:3|max:225',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed',
-            'grade' => 'required|max:225',
+            'name' => ['required', 'min:3', 'max:225'],
+            'email' => ['required', 'email', 'unique:users'],
+            'password' => ['required', 'min:8', 'confirmed'],
+            'grade' => ['required', 'max:225'],
         ]);
 
-        $user = User::create([
+        $user = User::query()->create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -38,8 +38,8 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+            'email' => ['required', 'email'],
+            'password' => ['required'],
         ]);
 
         // success login

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\StudySession;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +14,8 @@ return new class extends Migration
     {
         Schema::create('session_logs', function (Blueprint $table) {
             $table->id();
-            $table->integer('duration_seconds');
+            $table->foreignIdFor(StudySession::class)->constrained()->cascadeOnDelete();
+            $table->unsignedInteger('duration_seconds');
             $table->timestamps();
         });
     }
