@@ -11,7 +11,7 @@ class SessionLog extends Model
     use HasFactory;
 
     protected $guarded = [];
-    
+
     public function studySession(): BelongsTo
     {
         return $this->belongsTo(StudySession::class);

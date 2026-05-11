@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\QuizResultController;
+use App\Http\Controllers\StudySessionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,4 +15,8 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::apiResource('quiz-results', QuizResultController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('study-session', StudySessionController::class);
 });
+
+

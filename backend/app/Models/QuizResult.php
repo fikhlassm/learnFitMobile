@@ -12,8 +12,13 @@ class QuizResult extends Model
 
     protected $guarded = [];
 
-    public function studyTechnique() : BelongsTo
+    public function studyTechnique(): BelongsTo
     {
         return $this->belongsTo(StudyTechnique::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

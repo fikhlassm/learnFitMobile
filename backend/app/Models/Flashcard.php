@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\StudySession;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\StudySession;
 
 class Flashcard extends Model
 {
@@ -13,7 +13,7 @@ class Flashcard extends Model
 
     protected $guarded = [];
 
-    public function studySession() : BelongsTo
+    public function studySession(): BelongsTo
     {
         return $this->belongsTo(StudySession::class);
     }
