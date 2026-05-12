@@ -16,7 +16,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('quiz-results', QuizResultController::class)->only(['index', 'store', 'show']);
-    Route::apiResource('study-session', StudySessionController::class);
+    Route::apiResource('study-sessions', StudySessionController::class);
 });
 
 

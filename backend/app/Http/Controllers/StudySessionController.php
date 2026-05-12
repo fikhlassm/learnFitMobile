@@ -4,10 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\StudySession;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 
-class StudySessionController extends Controller
+class StudySessionController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:modify,study_sessions', only: ['show','update', 'destroy']),
+        ];
+    }
+    
     /**
      * Display a listing of the resource.
      */
@@ -27,8 +36,7 @@ class StudySessionController extends Controller
             'topic' => ['required', 'min:3', 'max:50'],
         ]);
 
-        $studySession = StudySession::query()->create([
-            'user_id' => $request->user()->id,
+        $studySession = Auth::user()->studySessions()->create([
             'study_technique_id' => $request->input('study_technique_id'),
             'topic' => $validated['topic'],
         ]);
@@ -40,11 +48,7 @@ class StudySessionController extends Controller
      * Display the specified resource.
      */
     public function show(StudySession $studySession)
-    {
-        if ($studySession->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized');
-        }
-        
+    {   
         return response()->json($studySession, 200);
     }
 

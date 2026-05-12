@@ -4,10 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\QuizResult;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 
-class QuizResultController extends Controller
+class QuizResultController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware('can:modify,quiz-results', only: ['show']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -36,9 +45,6 @@ class QuizResultController extends Controller
      */
     public function show(QuizResult $quizResult)
     {
-        if ($quizResult->user_id !== auth()->id()) {
-+           abort(403, 'Unauthorized');
-+       }
         return response()->json($quizResult, 200);
     }
 }
