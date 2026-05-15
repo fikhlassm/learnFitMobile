@@ -10,8 +10,8 @@ class QuizResultPolicy
 {
     public function modify(User $user, QuizResult $quizResult): Response
     {
-        return $quizResult->user_id === $user->id 
-            ? Response::allow() 
-            : Response::deny(); 
+        return $quizResult->user_id === $user->id
+            ? Response::allow()
+            : Response::deny();
     }
 }

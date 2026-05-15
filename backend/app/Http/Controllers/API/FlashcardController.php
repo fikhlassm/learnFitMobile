@@ -37,7 +37,7 @@ class FlashcardController extends Controller implements HasMiddleware
             'question' => ['required', 'min:3'],
             'answer' => ['required'],
         ]);
-        
+
         $flashcard = Auth::user()->studySessions()->flashcards()->create([
             'question' => $validated['question'],
             'answer' => $validated['answer'],

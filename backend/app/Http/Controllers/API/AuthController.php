@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Otp\UserRegistrationOtp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use SadiqSalau\LaravelOtp\Facades\Otp;
 
 class AuthController extends Controller
 {
@@ -16,23 +18,28 @@ class AuthController extends Controller
             'name' => ['required', 'min:3', 'max:225'],
             'email' => ['required', 'email', 'unique:users'],
             'password' => ['required', 'min:8', 'confirmed'],
-            'grade' => ['required', 'max:225'],
         ]);
 
-        $user = User::query()->create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'grade' => $validated['grade'],
-        ]);
+        $otp = Otp::identifier($validated['email'])->send(
+            new UserRegistrationOtp(
+                name: $validated['name'],
+                email: $validated['email'],
+                password: $validated['password']
+            ),
+            Notification::route('mail', $request->email)
+        );
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        if ($otp['status'] !== Otp::OTP_SENT) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __($otp['status']),
+            ], 400);
+        }
 
         return response()->json([
-            'message' => 'Succesfully created user',
-            'access_token' => $token,
-            'token_type' => 'bearer',
-        ], 201);
+            'status' => 'success',
+            'message' => __($otp['status']),
+        ], 200);
     }
 
     public function login(Request $request)

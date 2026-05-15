@@ -12,7 +12,8 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "sadiqsalau/laravel-otp": "^1.0"
     },
     "require-dev": {
         "driftingly/rector-laravel": "^2.3",
@@ -39,8 +40,8 @@
     },
     "scripts": {
         "format": [
-            ".\\vendor\\bin\\rector",
-            ".\\vendor\\bin\\pint"
+            "./vendor/bin/rector",
+            "./vendor/bin/pint"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

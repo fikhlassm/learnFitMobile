@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\FlashcardController;
+use App\Http\Controllers\API\OtpController;
 use App\Http\Controllers\API\QuizResultController;
 use App\Http\Controllers\API\StudySessionController;
 use Illuminate\Http\Request;
@@ -13,6 +14,8 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/otp/verify', [OtpController::class, 'validateOtp']);
+Route::post('/otp/resend', [OtpController::class, 'resendOtp']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -20,5 +23,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('study-sessions', StudySessionController::class);
     Route::apiResource('flashcards', FlashcardController::class);
 });
-
-

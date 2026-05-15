@@ -14,10 +14,10 @@ class StudySessionController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:modify,study_sessions', only: ['show','update', 'destroy']),
+            new Middleware('can:modify,study_sessions', only: ['show', 'update', 'destroy']),
         ];
     }
-    
+
     /**
      * Display a listing of the resource.
      */
@@ -49,7 +49,7 @@ class StudySessionController extends Controller implements HasMiddleware
      * Display the specified resource.
      */
     public function show(StudySession $studySession)
-    {   
+    {
         return response()->json($studySession, 200);
     }
 

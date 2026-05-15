@@ -10,8 +10,8 @@ class StudySessionPolicy
 {
     public function modify(User $user, StudySession $studySession): Response
     {
-        return $studySession->user_id === $user->id 
-            ? Response::allow() 
-            : Response::deny(); 
+        return $studySession->user_id === $user->id
+            ? Response::allow()
+            : Response::deny();
     }
 }

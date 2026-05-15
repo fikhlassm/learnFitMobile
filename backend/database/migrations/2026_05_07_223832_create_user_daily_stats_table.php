@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->unsignedInteger('total_seconds');
-            $table->nteger('total_seconds');
             $table->timestamps();
         });
     }
