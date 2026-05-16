@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\FlashcardController;
+use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\OtpController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\QuizResultController;
@@ -12,6 +13,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/otp/verify', [OtpController::class, 'validateOtp']);
 Route::post('/otp/resend', [OtpController::class, 'resendOtp']);
+
+Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
