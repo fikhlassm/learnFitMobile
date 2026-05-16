@@ -14,7 +14,7 @@ class StudySessionController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:modify,study_sessions', only: ['show', 'update', 'destroy']),
+            new Middleware('can:modify,study_session', only: ['show', 'update', 'destroy']),
         ];
     }
 

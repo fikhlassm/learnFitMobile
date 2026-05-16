@@ -14,7 +14,7 @@ class QuizResultController extends Controller implements HasMiddleware
     public static function middleware()
     {
         return [
-            new Middleware('can:modify,quiz-results', only: ['show']),
+            new Middleware('can:modify,quiz_result', only: ['show']),
         ];
     }
 
