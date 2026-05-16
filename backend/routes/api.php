@@ -3,17 +3,13 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\FlashcardController;
 use App\Http\Controllers\API\OtpController;
+use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\QuizResultController;
 use App\Http\Controllers\API\StudySessionController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/otp/verify', [OtpController::class, 'validateOtp']);
 Route::post('/otp/resend', [OtpController::class, 'resendOtp']);
 
@@ -22,4 +18,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('quiz-results', QuizResultController::class)->only(['index', 'store', 'show']);
     Route::apiResource('study-sessions', StudySessionController::class);
     Route::apiResource('flashcards', FlashcardController::class);
+    Route::apiResource('/profile', ProfileController::class)->only(['index', 'update', 'destroy']);
 });

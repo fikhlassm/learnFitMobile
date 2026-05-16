@@ -7,7 +7,6 @@ use App\Models\QuizResult;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Auth;
 
 class QuizResultController extends Controller implements HasMiddleware
 {
@@ -18,17 +17,15 @@ class QuizResultController extends Controller implements HasMiddleware
         ];
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Auth::user()->quizResults()->get(), 200);
+        $quizResults = $request->user()->quizResults()->get();
+
+        return response()->json([
+            'data' => $quizResults,
+        ], 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         QuizResult::query()->create([
@@ -41,11 +38,10 @@ class QuizResultController extends Controller implements HasMiddleware
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(QuizResult $quizResult)
     {
-        return response()->json($quizResult, 200);
+        return response()->json([
+            'data' => $quizResult,
+        ], 200);
     }
 }

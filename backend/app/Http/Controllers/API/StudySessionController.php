@@ -7,7 +7,6 @@ use App\Models\StudySession;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Auth;
 
 class StudySessionController extends Controller implements HasMiddleware
 {
@@ -18,55 +17,48 @@ class StudySessionController extends Controller implements HasMiddleware
         ];
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $studySessions = Auth::user()->studySessions()->get();
+        $studySessions = $request->user()->studySessions()->get();
 
-        return response()->json($studySessions, 200);
+        return response()->json([
+            'data' => $studySessions,
+        ], 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'topic' => ['required', 'min:3', 'max:50'],
         ]);
 
-        $studySession = Auth::user()->studySessions()->create([
+        $studySession = $request->user()->studySessions()->create([
             'study_technique_id' => $request->input('study_technique_id'),
             'topic' => $validated['topic'],
         ]);
 
-        return response()->json($studySession, 201);
+        return response()->json([
+            'data' => $studySession,
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(StudySession $studySession)
     {
-        return response()->json($studySession, 200);
+        return response()->json([
+            'data' => $studySession,
+        ], 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, StudySession $studySession)
     {
         $studySession->content = $request->input('content');
         $studySession->save();
 
-        return response()->json($studySession, 200);
+        return response()->json([
+            'data' => $studySession,
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(StudySession $studySession)
     {
         $studySession->delete();

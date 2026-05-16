@@ -60,13 +60,14 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Succesfully logged in',
                 'access_token' => $token,
-                'token_type' => 'bearer',
+                'token_type' => 'Bearer',
             ], 200);
         }
 
         // invalid user
         return response()->json([
-            'message' => 'Invalid credentials'], 401);
+            'message' => 'Invalid credentials',
+        ], 401);
     }
 
     public function logout(Request $request)
