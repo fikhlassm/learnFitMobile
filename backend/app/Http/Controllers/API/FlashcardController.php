@@ -14,16 +14,22 @@ class FlashcardController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:modify,flashcards', except: ['store']),
+            new Middleware('can:modify,flashcard', except: ['store']),
         ];
     }
 
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $flashcards = Auth::user()->studySessions()->flashcards()->get();
+        $validated = $request->validate([
+            'study_session_id' => ['required', 'exists:study_sessions,id'],
+        ]);
+
+        $session = Auth::user()->studySessions()->findOrFail($validated['study_session_id']);
+
+        $flashcards = $session->flashcards()->get();
 
         return response()->json($flashcards, 200);
     }
@@ -34,11 +40,14 @@ class FlashcardController extends Controller implements HasMiddleware
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'study_session_id' => ['required', 'exists:study_sessions,id'],
             'question' => ['required', 'min:3'],
             'answer' => ['required'],
         ]);
 
-        $flashcard = Auth::user()->studySessions()->flashcards()->create([
+        $session = Auth::user()->studySessions()->findOrFail($validated['study_session_id']);
+
+        $flashcard = $session->flashcards()->create([
             'question' => $validated['question'],
             'answer' => $validated['answer'],
         ]);

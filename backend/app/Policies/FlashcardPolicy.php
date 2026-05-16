@@ -10,7 +10,7 @@ class FlashcardPolicy
 {
     public function modify(User $user, Flashcard $flashcard): Response
     {
-        return $$flashcard->studySession->user_id === $user->id
+        return $flashcard->studySession->user_id === $user->id
             ? Response::allow()
             : Response::deny();
     }
