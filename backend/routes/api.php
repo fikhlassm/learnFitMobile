@@ -8,6 +8,7 @@ use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\QuizResultController;
 use App\Http\Controllers\API\SessionLogController;
 use App\Http\Controllers\API\StudySessionController;
+use App\Http\Controllers\API\UserDailyStatController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -24,4 +25,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('flashcards', FlashcardController::class);
     Route::apiSingleton('profile', ProfileController::class)->destroyable();
     Route::apiResource('session-logs', SessionLogController::class)->only(['index', 'store', 'show', 'destroy']);
+    Route::apiResource('user-daily-stats', UserDailyStatController::class)->only(['index', 'show']);
 });
