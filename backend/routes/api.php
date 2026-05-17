@@ -6,6 +6,7 @@ use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\OtpController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\QuizResultController;
+use App\Http\Controllers\API\SessionLogController;
 use App\Http\Controllers\API\StudySessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,5 +22,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('quiz-results', QuizResultController::class)->only(['index', 'store', 'show']);
     Route::apiResource('study-sessions', StudySessionController::class);
     Route::apiResource('flashcards', FlashcardController::class);
-    Route::apiSingleton('/profile', ProfileController::class)->destroyable();
+    Route::apiSingleton('profile', ProfileController::class)->destroyable();
+    Route::apiResource('session-logs', SessionLogController::class)->only(['index', 'store', 'show', 'destroy']);
 });
