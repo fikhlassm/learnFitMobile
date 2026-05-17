@@ -21,5 +21,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('quiz-results', QuizResultController::class)->only(['index', 'store', 'show']);
     Route::apiResource('study-sessions', StudySessionController::class);
     Route::apiResource('flashcards', FlashcardController::class);
-    Route::apiResource('/profile', ProfileController::class)->only(['index', 'update', 'destroy']);
+    Route::apiSingleton('/profile', ProfileController::class)->destroyable();
 });
