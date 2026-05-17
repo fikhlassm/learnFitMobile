@@ -5,9 +5,18 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\UserDailyStat;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class UserDailyStatController extends Controller
+class UserDailyStatController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:modify,user_daily_stat', only: ['show']),
+        ];
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -33,8 +42,6 @@ class UserDailyStatController extends Controller
 
     public function show(Request $request, UserDailyStat $userDailyStat)
     {
-        abort_unless($userDailyStat->user_id === $request->user()->id, 403);
-
         return response()->json([
             'data' => $userDailyStat,
         ], 200);

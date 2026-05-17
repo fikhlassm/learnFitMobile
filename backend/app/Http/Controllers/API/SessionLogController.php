@@ -6,11 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\SessionLog;
 use App\Models\UserDailyStat;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class SessionLogController extends Controller
+class SessionLogController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:modify,session_log', only: ['show', 'destroy']),
+        ];
+    }
+
     public function index(Request $request)
     {
         $sessionLogs = SessionLog::query()
@@ -74,11 +83,6 @@ class SessionLogController extends Controller
 
     public function show(Request $request, SessionLog $sessionLog)
     {
-        abort_unless(
-            $sessionLog->studySession()->where('user_id', $request->user()->id)->exists(),
-            403
-        );
-
         return response()->json([
             'data' => $sessionLog->load('studySession'),
         ], 200);
@@ -86,11 +90,6 @@ class SessionLogController extends Controller
 
     public function destroy(Request $request, SessionLog $sessionLog)
     {
-        abort_unless(
-            $sessionLog->studySession()->where('user_id', $request->user()->id)->exists(),
-            403
-        );
-
         DB::beginTransaction();
 
         try {
