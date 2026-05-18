@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('study_sessions', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(User::class)->constrained()->onDelete('cascade');
-            $table->foreignIdFor(StudyTechnique::class)->constrained()->onDelete('cascade');
+            $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(StudyTechnique::class)->constrained()->cascadeOnDelete();
             $table->string('topic', 50);
             $table->text('content')->nullable();
             $table->timestamps();

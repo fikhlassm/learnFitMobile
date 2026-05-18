@@ -20,7 +20,7 @@ class QuizResultController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $quizResults = $request->user()->quizResults()->get();
-
+    
         return response()->json([
             'data' => $quizResults,
         ], 200);

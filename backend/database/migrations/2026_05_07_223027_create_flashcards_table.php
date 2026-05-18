@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('flashcards', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(StudySession::class);
+            $table->foreignIdFor(StudySession::class)->constrained()->cascadeOnDelete();
             $table->string('question');
             $table->string('answer');
             $table->timestamps();
