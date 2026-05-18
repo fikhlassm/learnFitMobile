@@ -13,5 +13,5 @@ class UserDailyStatPolicy
         return $userDailyStat->user_id === $user->id
             ? Response::allow()
             : Response::deny();
-    }    
+    }
 }

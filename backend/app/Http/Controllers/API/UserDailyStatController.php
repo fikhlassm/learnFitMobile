@@ -46,5 +46,4 @@ class UserDailyStatController extends Controller implements HasMiddleware
             'data' => $userDailyStat,
         ], 200);
     }
-
 }

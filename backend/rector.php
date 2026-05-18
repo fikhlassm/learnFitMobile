@@ -12,6 +12,7 @@ return RectorConfig::configure()
         __DIR__.'/bootstrap',
         __DIR__.'/routes',
         __DIR__.'/tests',
+        __DIR__.'/database/seeders',
     ])
     ->withSets([
         LaravelLevelSetList::UP_TO_LARAVEL_120,
