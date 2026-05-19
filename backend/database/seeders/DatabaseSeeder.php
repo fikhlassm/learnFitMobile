@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             StudyTechniqueSeeder::class,
             QuizResultSeeder::class,
-            StudySessionSeeder::class
+            StudySessionSeeder::class,
         ]);
     }
 }

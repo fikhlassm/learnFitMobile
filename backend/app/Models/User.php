@@ -21,12 +21,7 @@ class User extends Authenticatable implements CanResetPassword
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'grade',
-    ];
+    protected $guarded = [];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -48,6 +43,7 @@ class User extends Authenticatable implements CanResetPassword
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_study_date' => 'date'
         ];
     }
 

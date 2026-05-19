@@ -8,6 +8,7 @@ use App\Models\UserDailyStat;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -42,7 +43,9 @@ class SessionLogController extends Controller implements HasMiddleware
             'duration_seconds' => ['required', 'integer', 'min:1'],
         ]);
 
-        $studySession = $request->user()
+        $user = $request->user();
+
+        $studySession = $user
             ->studySessions()
             ->findOrFail($validated['study_session_id']);
 
@@ -53,6 +56,7 @@ class SessionLogController extends Controller implements HasMiddleware
                 'duration_seconds' => $validated['duration_seconds'],
             ]);
 
+            // user_daily_stat
             $dailyStat = UserDailyStat::query()->firstOrCreate(
                 [
                     'user_id' => $studySession->user_id,
@@ -64,6 +68,18 @@ class SessionLogController extends Controller implements HasMiddleware
             );
 
             $dailyStat->increment('total_seconds', $validated['duration_seconds']);
+
+            // user streak
+            $lastStudyDate = $user->last_study_date;
+
+            if (!$lastStudyDate || $lastStudyDate->isBefore(Date::now()->startOfDay()->subDay())) {
+                $user->current_streak = 1;
+            } elseif ($lastStudyDate->isYesterday()) {
+                $user->current_streak += 1;
+            }
+
+            $user->last_study_date = Date::now();
+            $user->save();
 
             DB::commit();
 

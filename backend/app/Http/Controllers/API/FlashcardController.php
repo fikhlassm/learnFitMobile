@@ -13,7 +13,7 @@ class FlashcardController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:modify,flashcard', except: ['store']),
+            new Middleware('can:modify,flashcard', except: ['store', 'index']),
         ];
     }
 
