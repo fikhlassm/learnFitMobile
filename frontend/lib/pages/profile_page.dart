@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';  // ← Import AuthService
+import '../pages/login_page.dart';        // ← Import LoginPage untuk navigasi logout
 import 'personal_information_page.dart';
 import 'study_reminders_page.dart';
 import 'privacy_security_page.dart';
 import 'support_center.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final _authService = AuthService();  // ← Instance AuthService
+  bool _isLoggingOut = false;          // ← Loading state untuk logout
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +35,10 @@ class ProfilePage extends StatelessWidget {
                     const SizedBox(height: 20),
                     _buildLogoutButton(context),
                     const SizedBox(height: 16),
-                    Text('LearnFit v1.0.0',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+                    Text(
+                      'LearnFit v1.0.0',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                    ),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -49,9 +61,10 @@ class ProfilePage extends StatelessWidget {
               'Profil Saya',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87),
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
             ),
           ),
         ],
@@ -89,9 +102,10 @@ class ProfilePage extends StatelessWidget {
         const Text(
           'Amin Suramin',
           style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 6),
         Row(
@@ -106,9 +120,10 @@ class ProfilePage extends StatelessWidget {
               child: const Text(
                 'Grade 11',
                 style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2196F3)),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2196F3),
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -131,9 +146,10 @@ class ProfilePage extends StatelessWidget {
         const Text(
           'Account Settings',
           style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 12),
         Container(
@@ -157,7 +173,8 @@ class ProfilePage extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const PersonalInformationPage()),
+                    builder: (_) => const PersonalInformationPage(),
+                  ),
                 ),
               ),
               _divider(),
@@ -168,7 +185,8 @@ class ProfilePage extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const StudyRemindersPage()),
+                    builder: (_) => const StudyRemindersPage(),
+                  ),
                 ),
               ),
               _divider(),
@@ -179,7 +197,8 @@ class ProfilePage extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const PrivacySecurityPage()),
+                    builder: (_) => const PrivacySecurityPage(),
+                  ),
                 ),
               ),
               _divider(),
@@ -188,9 +207,11 @@ class ProfilePage extends StatelessWidget {
                 icon: Icons.help_outline_rounded,
                 label: 'Support Center',
                 onTap: () {
-                   Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SupportCenterPage()),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SupportCenterPage(),
+                    ),
                   );
                 },
               ),
@@ -201,10 +222,12 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _settingsItem(BuildContext context,
-      {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
+  Widget _settingsItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -215,11 +238,14 @@ class ProfilePage extends StatelessWidget {
             Icon(icon, size: 22, color: Colors.black54),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87)),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
             ),
             Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
           ],
@@ -245,45 +271,87 @@ class ProfilePage extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: Colors.red.shade100),
           backgroundColor: Colors.red.shade50,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
         icon: Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 18),
         label: Text(
           'Logout',
           style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.red.shade400),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.red.shade400,
+          ),
         ),
       ),
     );
   }
 
+  // ── DIALOG KONFIRMASI LOGOUT (UPDATED) ──
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Konfirmasi Logout',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        title: const Text(
+          'Konfirmasi Logout',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+        ),
         content: const Text('Apakah kamu yakin ingin keluar dari akun?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Batal',
-                style: TextStyle(color: Colors.grey[600])),
+            child: Text('Batal', style: TextStyle(color: Colors.grey[600])),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Logout',
-                style: TextStyle(
-                    color: Colors.red.shade400,
-                    fontWeight: FontWeight.w600)),
+            onPressed: _isLoggingOut ? null : _handleLogout,
+            child: _isLoggingOut
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.red,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: Colors.red.shade400,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
         ],
       ),
     );
+  }
+
+  // ── HANDLE LOGOUT API CALL ──
+  Future<void> _handleLogout() async {
+    setState(() => _isLoggingOut = true);
+
+    final result = await _authService.logout();
+
+    // Tutup dialog dulu sebelum navigasi
+    if (mounted) Navigator.pop(context);
+
+    setState(() => _isLoggingOut = false);
+
+    if (mounted) {
+      if (result['success']) {
+        // ✅ Logout berhasil - hapus semua route & kembali ke login
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
+      } else {
+        // ❌ Tampilkan error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Logout gagal')),
+        );
+      }
+    }
   }
 }

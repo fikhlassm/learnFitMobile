@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
 
+  /// POST /api/login
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
@@ -22,10 +23,16 @@ class AuthService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Simpan token jika ada di response
-        if (data['token'] != null) {
+        // Auto-detect token dari berbagai kemungkinan field
+        String? token = 
+          data['token'] ?? 
+          data['access_token'] ?? 
+          data['data']?['token'] ?? 
+          data['data']?['access_token'];
+
+        if (token != null) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('auth_token', data['token']);
+          await prefs.setString('auth_token', token);
         }
         
         return {
@@ -45,48 +52,52 @@ class AuthService {
       };
     }
   }
-    /// POST /api/logout
+
+  /// POST /api/logout
   Future<Map<String, dynamic>> logout() async {
     try {
-      // 1. Ambil token dari storage untuk auth header
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
 
-      // 2. Kirim request ke backend
       final response = await http.post(
         Uri.parse('$baseUrl/logout'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          // Laravel Sanctum/API Token authentication
           if (token != null) 'Authorization': 'Bearer $token',
         },
       );
 
       final data = jsonDecode(response.body);
 
-      // 3. Cek response
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // ✅ Hapus token dari local storage
         await prefs.remove('auth_token');
-
         return {
           'success': true,
           'message': 'Logout berhasil',
         };
       } else {
-        // ❌ Backend return error message
         return {
           'success': false,
           'message': data['message'] ?? 'Logout gagal',
         };
       }
     } catch (e) {
-      // ❌ Network error / server down
       return {
         'success': false,
         'message': 'Koneksi gagal: ${e.toString()}',
       };
     }
+  }
+
+  /// Helper: Get headers dengan token otomatis
+  static Future<Map<String, String>> getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
   }
 }
