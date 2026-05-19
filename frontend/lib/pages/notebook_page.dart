@@ -4,9 +4,18 @@ import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
 import 'quiz_page.dart';
+import 'new_note_sheet.dart';
 
-class NotebookPage extends StatelessWidget {
+class NotebookPage extends StatefulWidget {
   const NotebookPage({super.key});
+
+  @override
+  State<NotebookPage> createState() => _NotebookPageState();
+}
+
+class _NotebookPageState extends State<NotebookPage> {
+  // ── Filter state ──
+  final Set<String> _activeFilters = {};
 
   static const List<Map<String, dynamic>> _notes = [
     {
@@ -48,6 +57,14 @@ class NotebookPage extends StatelessWidget {
     },
   ];
 
+  // ── Notes yang tampil setelah filter diterapkan ──
+  List<Map<String, dynamic>> get _filteredNotes {
+    if (_activeFilters.isEmpty) return _notes;
+    return _notes
+        .where((note) => _activeFilters.contains(note['method'] as String))
+        .toList();
+  }
+
   // ── Helper: routing ke session page yang benar berdasarkan method ──
   static Widget _sessionPageFor(String method, String title) {
     switch (method) {
@@ -62,6 +79,191 @@ class NotebookPage extends StatelessWidget {
       default:
         return FeynmanSessionPage(topicTitle: title);
     }
+  }
+
+  // ── Tampilkan filter dropdown sebagai overlay ──
+  void _showFilterMenu(BuildContext context) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    // Salin filter aktif sementara untuk preview sebelum apply
+    final Set<String> tempFilters = Set.from(_activeFilters);
+    const methods = ['Pomodoro', 'Feynman Technique', 'Active Recall', 'Blurting'];
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (ctx) {
+        return Stack(
+          children: [
+            // Tap di luar untuk tutup
+            GestureDetector(
+              onTap: () => Navigator.pop(ctx),
+              behavior: HitTestBehavior.translucent,
+              child: const SizedBox.expand(),
+            ),
+            Positioned(
+              // Posisi dropdown: tepat di bawah tombol Filter
+              top: position.top + (button.size.height),
+              right: 16,
+              child: StatefulBuilder(
+                builder: (ctx2, setLocal) {
+                  return Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white,
+                    child: Container(
+                      width: 200,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ── Method checkboxes ──
+                          ...methods.map((method) {
+                            final isChecked = tempFilters.contains(method);
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () {
+                                setLocal(() {
+                                  if (isChecked) {
+                                    tempFilters.remove(method);
+                                  } else {
+                                    tempFilters.add(method);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 150),
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: isChecked
+                                            ? const Color(0xFF2196F3)
+                                            : Colors.transparent,
+                                        border: Border.all(
+                                          color: isChecked
+                                              ? const Color(0xFF2196F3)
+                                              : const Color(0xFFBBBBBB),
+                                          width: 1.5,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(4),
+                                      ),
+                                      child: isChecked
+                                          ? const Icon(Icons.check,
+                                              size: 14, color: Colors.white)
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      method,
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: isChecked
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: isChecked
+                                            ? const Color(0xFF2196F3)
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+
+                          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                          const SizedBox(height: 6),
+
+                          // ── Tombol Reset & Apply ──
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 10),
+                            child: Row(
+                              children: [
+                                // Reset
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      setLocal(() => tempFilters.clear());
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor:
+                                          Colors.grey[600],
+                                      side: BorderSide(
+                                          color: Colors.grey[300]!),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Reset',
+                                        style: TextStyle(fontSize: 12)),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Apply
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _activeFilters.clear();
+                                        _activeFilters.addAll(tempFilters);
+                                      });
+                                      Navigator.pop(ctx);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          const Color(0xFF2196F3),
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text('Terapkan',
+                                        style: TextStyle(fontSize: 12)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -106,25 +308,50 @@ class NotebookPage extends StatelessWidget {
                           color: Colors.black87,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Row(
-                          children: [
-                            Text(
-                              'Filter',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF2196F3),
+
+                      // ── Filter Button ──
+                      Builder(
+                        builder: (btnCtx) => GestureDetector(
+                          onTap: () => _showFilterMenu(btnCtx),
+                          child: Row(
+                            children: [
+                              // Badge jumlah filter aktif
+                              if (_activeFilters.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2196F3),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${_activeFilters.length}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              const Text(
+                                'Filter',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF2196F3),
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(
-                              Icons.filter_alt_outlined,
-                              size: 16,
-                              color: Color(0xFF2196F3),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.filter_alt_outlined,
+                                size: 16,
+                                color: _activeFilters.isNotEmpty
+                                    ? const Color(0xFF2196F3)
+                                    : const Color(0xFF2196F3),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -132,8 +359,45 @@ class NotebookPage extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // ── Note Cards ──
-                  ..._notes.map((note) => _buildNoteCard(context, note)),
+                  // ── Filter chips aktif (opsional, untuk visual feedback) ──
+                  if (_activeFilters.isNotEmpty) ...[
+                    Wrap(
+                      spacing: 6,
+                      children: _activeFilters.map((f) {
+                        // Ambil warna dari data notes
+                        final noteData = _notes.firstWhere(
+                            (n) => n['method'] == f,
+                            orElse: () => _notes.first);
+                        return Chip(
+                          label: Text(
+                            f,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: noteData['methodColor'] as Color,
+                            ),
+                          ),
+                          backgroundColor: noteData['methodBg'] as Color,
+                          deleteIconColor: noteData['methodColor'] as Color,
+                          onDeleted: () {
+                            setState(() => _activeFilters.remove(f));
+                          },
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          side: BorderSide.none,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+
+                  // ── Note Cards (filtered) ──
+                  if (_filteredNotes.isEmpty)
+                    _buildEmptyState()
+                  else
+                    ..._filteredNotes
+                        .map((note) => _buildNoteCard(context, note)),
 
                   const SizedBox(height: 80),
                 ],
@@ -145,20 +409,47 @@ class NotebookPage extends StatelessWidget {
 
       // ── FAB: ke QuizPage agar user pilih metode dulu ──
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const QuizPage()),
-          );
-        },
+        onPressed: () => NewNoteSheet.show(context),
         backgroundColor: const Color(0xFF2196F3),
         shape: const CircleBorder(),
         elevation: 3,
         child: const Icon(Icons.add, color: Colors.white, size: 26),
       ),
 
-      // ── Bottom Nav ──
-      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  // ── Empty state ketika tidak ada catatan yang cocok ──
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        children: [
+          Icon(Icons.filter_list_off_rounded,
+              size: 48, color: Colors.grey[300]),
+          const SizedBox(height: 12),
+          Text(
+            'Tidak ada catatan untuk filter ini',
+            style: TextStyle(
+              fontSize: 13.5,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => setState(() => _activeFilters.clear()),
+            child: const Text(
+              'Hapus filter',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF2196F3),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -297,7 +588,6 @@ class NotebookPage extends StatelessWidget {
   Widget _buildNoteCard(BuildContext context, Map<String, dynamic> note) {
     return GestureDetector(
       onTap: () {
-        // ✅ Routing dinamis berdasarkan method di data note
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -393,36 +683,6 @@ class NotebookPage extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Icons.home_outlined, 'Home', false),
-              _navItem(Icons.article_outlined, 'Notebook', true),
-              _navItem(Icons.track_changes_outlined, 'Goals', false),
-              _navItem(Icons.person_outline, 'Profile', false),
-            ],
-          ),
         ),
       ),
     );

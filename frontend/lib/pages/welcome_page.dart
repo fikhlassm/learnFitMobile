@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'quiz_page.dart';
+import 'home_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -25,24 +26,6 @@ class WelcomePage extends StatelessWidget {
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: Colors.black87,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // TODO: Navigate to home / skip
-                    },
-                    style: TextButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: EdgeInsets.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'Lewati',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w500,
-                      ),
                     ),
                   ),
                 ],
@@ -236,25 +219,28 @@ class WelcomePage extends StatelessWidget {
 
             const Spacer(),
 
-            GestureDetector(
-              onTap: () {
-                // TODO: Navigate to home
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 32),
-                child: Text(
-                  'Lakukan Nanti',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.underline,
-                    decorationColor: Colors.grey[700],
-                  ),
-                ),
-              ),
-            ),
-          ],
+GestureDetector(
+  onTap: () {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomePage()),
+    );
+  },
+  child: Padding(
+    padding: const EdgeInsets.only(bottom: 32),
+    child: Text(
+      'Lakukan Nanti',
+      style: TextStyle(
+        fontSize: 14,
+        color: Colors.grey[700],
+        fontWeight: FontWeight.w600,
+        decoration: TextDecoration.underline,
+        decorationColor: Colors.grey[700],
+      ),
+    ),
+  ),
+),
+          ]
         ),
       ),
     );

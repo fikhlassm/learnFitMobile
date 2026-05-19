@@ -43,16 +43,7 @@ class IntroPage2 extends StatelessWidget {
                     ),
                   ],
                 ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Skip',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
+    
               ],
             ),
 

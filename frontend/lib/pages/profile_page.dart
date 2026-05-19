@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'personal_information_page.dart';
 import 'study_reminders_page.dart';
 import 'privacy_security_page.dart';
-import 'support_center_page.dart';
+import 'support_center.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -187,11 +187,12 @@ class ProfilePage extends StatelessWidget {
                 context,
                 icon: Icons.help_outline_rounded,
                 label: 'Support Center',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const SupportCenterPage()),
-                ),
+                onTap: () {
+                   Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SupportCenterPage()),
+                  );
+                },
               ),
             ],
           ),
