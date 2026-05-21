@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'registration_page.dart';
+import 'welcome_page.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,7 +13,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+    final _authService = AuthService(); 
   bool _obscurePassword = true;
+   bool _isLoading = false;
 
   @override
   void dispose() {
@@ -19,7 +23,42 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     super.dispose();
   }
+  Future<void> _handleLogin() async {
+    // Validasi sederhana
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email dan password harus diisi')),
+      );
+      return;
+    }
 
+    setState(() => _isLoading = true);
+
+    final result = await _authService.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result['success']) {
+      // ✅ Login berhasil
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login berhasil!')),
+      );
+      
+      // Navigasi ke WelcomePage (ganti sesuai flow-mu)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomePage()),
+      );
+    } else {
+      // ❌ Login gagal - tampilkan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Login gagal')),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -217,30 +256,38 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 8),
 
             // ── Tombol Masuk ──
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: logic login
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Masuk',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+   // ── Tombol Masuk ──
+SizedBox(
+  width: double.infinity,
+  height: 54,
+  child: ElevatedButton(
+    onPressed: _isLoading ? null : _handleLogin, // ← Ganti ke _handleLogin
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF2196F3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      elevation: 0,
+    ),
+    child: _isLoading
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
             ),
+          )
+        : const Text(
+            'Masuk',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+  ),
+),
 
             const SizedBox(height: 20),
 
