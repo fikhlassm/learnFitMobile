@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
+use Spatie\PdfToText\Pdf;
 
 class StudySessionAttachmentController extends Controller implements HasMiddleware
 {
@@ -31,14 +32,17 @@ class StudySessionAttachmentController extends Controller implements HasMiddlewa
     public function store(Request $request, StudySession $studySession)
     {
         $request->validate([
-            'file' => ['required', 'file', 'max:10240', 'mimes:txt,md'],
+            'file' => ['required', 'file', 'max:51200', 'mimes:txt,md,pdf'],
         ]);
 
         $file = $request->file('file');
         $originalName = $file->getClientOriginalName();
         $mimeType = $file->getMimeType();
         $storedPath = $file->store('', 'study-materials');
-        $fileContent = file_get_contents($file->getRealPath());
+        $fileContent = match ($mimeType) {
+            'application/pdf' => Pdf::getText($file->getRealPath()),
+            default => file_get_contents($file->getRealPath()),
+        };
 
         $attachment = $studySession->studySessionAttachments()->create([
             'original_name' => $originalName,
