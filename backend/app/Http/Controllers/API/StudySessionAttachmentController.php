@@ -3,64 +3,67 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\StudySession;
 use App\Models\StudySessionAttachment;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Storage;
 
-class StudySessionAttachmentController extends Controller
+class StudySessionAttachmentController extends Controller implements HasMiddleware
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public static function middleware(): array
     {
-        //
+        return [
+            new Middleware('can:modify,study_session', only: ['store', 'index']),
+            new Middleware('can:modify,attachment', only: ['show', 'destroy']),
+        ];
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function index(Request $request, StudySession $studySession)
     {
-        //
+        $attachments = $studySession->studySessionAttachments()->get();
+
+        return response()->json([
+            'data' => $attachments], 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request, StudySession $studySession)
     {
-        //
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240', 'mimes:txt,md'],
+        ]);
+
+        $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        $mimeType = $file->getMimeType();
+        $storedPath = $file->store('', 'study-materials');
+        $fileContent = file_get_contents($file->getRealPath());
+
+        $attachment = $studySession->studySessionAttachments()->create([
+            'original_name' => $originalName,
+            'stored_path' => $storedPath,
+            'mime_type' => $mimeType,
+            'file_content' => $fileContent,
+        ]);
+
+        return response()->json([
+            'data' => $attachment,
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(StudySessionAttachment $studySessionAttachment)
+    public function show(Request $request, StudySession $studySession, StudySessionAttachment $attachment)
     {
-        //
+        return response()->json([
+            'data' => $attachment], 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(StudySessionAttachment $studySessionAttachment)
+    public function destroy(Request $request, StudySession $studySession, StudySessionAttachment $attachment)
     {
-        //
-    }
+        Storage::disk('study-materials')->delete($attachment->stored_path);
+        $attachment->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, StudySessionAttachment $studySessionAttachment)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(StudySessionAttachment $studySessionAttachment)
-    {
-        //
+        return response()->json([
+            'message' => 'Successfully deleted attachment'], 200);
     }
 }
