@@ -17,8 +17,8 @@ class QuizResultSeeder extends Seeder
         $imam = User::query()->where('email', 'imam@gmail.com')->first();
         $budi = User::query()->where('email', 'budi@gmail.com')->first();
 
-        $pomodoro = StudyTechnique::query()->where('name', 'Pomodoro Technique')->first();
-        $activeRecall = StudyTechnique::query()->where('name', 'Active Recall')->first();
+        $pomodoro = StudyTechnique::query()->where('name', 'pomodoro')->first();
+        $activeRecall = StudyTechnique::query()->where('name', 'active recall')->first();
 
         QuizResult::query()->create([
             'user_id' => $imam->id,

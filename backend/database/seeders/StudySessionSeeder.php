@@ -21,10 +21,10 @@ class StudySessionSeeder extends Seeder
         $imam = User::query()->where('email', 'imam@gmail.com')->first();
         $budi = User::query()->where('email', 'budi@gmail.com')->first();
 
-        $pomodoro = StudyTechnique::query()->where('name', 'Pomodoro Technique')->first();
-        $feynman = StudyTechnique::query()->where('name', 'Feynman Technique')->first();
-        $activeRecall = StudyTechnique::query()->where('name', 'Active Recall')->first();
-        $blurting = StudyTechnique::query()->where('name', 'Blurting')->first();
+        $pomodoro = StudyTechnique::query()->where('name', 'pomodoro')->first();
+        $feynman = StudyTechnique::query()->where('name', 'feynman')->first();
+        $activeRecall = StudyTechnique::query()->where('name', 'active recall')->first();
+        $blurting = StudyTechnique::query()->where('name', 'blurting')->first();
 
         // imam session 1: active recall
         $imamSession1 = StudySession::query()->create([
