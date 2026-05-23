@@ -6,6 +6,7 @@ use Akira\Rag\Models\RagChunk;
 use Akira\Rag\Models\RagDocument;
 use Akira\Rag\Models\RagEmbedding;
 use Akira\Rag\Models\RagQuery;
+use Akira\Rag\Observability\LogMetricsRecorder;
 use Akira\Rag\Tenant\NullTenantResolver;
 
 return [
@@ -21,7 +22,7 @@ return [
     */
     'tenancy' => [
         'enabled' => env('RAG_TENANCY_ENABLED', true),
-        'resolver' => \Akira\Rag\Tenant\NullTenantResolver::class,
+        'resolver' => NullTenantResolver::class,
         'tenant_column' => 'tenant_id',
     ],
 
@@ -153,7 +154,7 @@ return [
         ],
         'metrics' => [
             'enabled' => true,
-            'recorder' => Akira\Rag\Observability\LogMetricsRecorder::class,
+            'recorder' => LogMetricsRecorder::class,
         ],
     ],
 ];

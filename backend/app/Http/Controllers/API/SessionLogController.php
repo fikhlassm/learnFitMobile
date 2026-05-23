@@ -72,7 +72,7 @@ class SessionLogController extends Controller implements HasMiddleware
             // user streak
             $lastStudyDate = $user->last_study_date;
 
-            if (!$lastStudyDate || $lastStudyDate->isBefore(Date::now()->startOfDay()->subDay())) {
+            if (! $lastStudyDate || $lastStudyDate->isBefore(Date::now()->startOfDay()->subDay())) {
                 $user->current_streak = 1;
             } elseif ($lastStudyDate->isYesterday()) {
                 $user->current_streak += 1;
