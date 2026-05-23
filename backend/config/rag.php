@@ -96,7 +96,7 @@ return [
     */
     'prompt' => [
         'system' => 'You MUST answer only using the provided context. If the answer is not present, say so clearly.',
-        'language' => 'en',
+        'language' => 'id',
     ],
 
     /*

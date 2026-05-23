@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\EvaluationController;
 use App\Http\Controllers\API\FlashcardController;
 use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\OtpController;
