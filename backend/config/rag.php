@@ -20,9 +20,9 @@ return [
     | resolver returns the current tenant identifier.
     */
     'tenancy' => [
-        'enabled' => false,
+        'enabled' => env('RAG_TENANCY_ENABLED', true),
+        'resolver' => \Akira\Rag\Tenant\NullTenantResolver::class,
         'tenant_column' => 'tenant_id',
-        'resolver' => NullTenantResolver::class,
     ],
 
     /*
@@ -49,8 +49,8 @@ return [
     | only; configure your actual provider separately.
     */
     'ai' => [
-        'embedding_model' => 'text-embedding-3-small',
-        'chat_model' => 'gpt-4.1-mini',
+        'embedding_model' => env('RAG_EMBEDDING_MODEL', 'text-embedding-3-small'),
+        'chat_model' => env('RAG_CHAT_MODEL', 'gpt-4'),
         'rerank_model' => 'gpt-4.1-mini',
     ],
 
@@ -63,8 +63,8 @@ return [
     | chunks during retrieval.
     */
     'chunking' => [
-        'target_tokens' => 800,
-        'overlap_tokens' => 120,
+        'target_tokens' => env('RAG_CHUNK_TARGET_TOKENS', 800),
+        'overlap_tokens' => env('RAG_CHUNK_OVERLAP_TOKENS', 120),
     ],
 
     /*
@@ -77,13 +77,12 @@ return [
     | ts_config controls PostgreSQL text search configuration.
     */
     'retrieval' => [
-        'top_k' => 5,
-        'candidate_k' => 20,
+        'top_k' => env('RAG_RETRIEVAL_TOP_K', 5),
+
         'hybrid' => [
-            'enabled' => true,
-            'semantic_weight' => 0.75,
-            'keyword_weight' => 0.25,
-            'ts_config' => 'simple',
+            'enabled' => env('RAG_HYBRID_ENABLED', true),
+            'semantic_weight' => env('RAG_HYBRID_SEMANTIC_WEIGHT', 0.75),
+            'keyword_weight' => env('RAG_HYBRID_KEYWORD_WEIGHT', 0.25),
         ],
     ],
 
@@ -108,9 +107,9 @@ return [
     | cache entries.
     */
     'cache' => [
-        'enabled' => true,
-        'ttl_seconds' => 1209600,
-        'prefix' => 'rag:v1',
+        'enabled' => env('RAG_CACHE_ENABLED', true),
+        'prefix' => env('RAG_CACHE_PREFIX', 'rag:v1'),
+        'ttl_seconds' => env('RAG_CACHE_TTL_SECONDS', 1209600), // 14 days
     ],
 
     /*
@@ -122,8 +121,7 @@ return [
     | to persist prompts when appropriate.
     */
     'audit' => [
-        'enabled' => true,
-        'store_prompts' => false,
+        'enabled' => env('RAG_AUDIT_ENABLED', true),
     ],
 
     /*

@@ -32,4 +32,9 @@ class StudySession extends Model
     {
         return $this->belongsTo(StudyTechnique::class);
     }
+
+    public function studySessionAttachments(): HasMany
+    {
+        return $this->hasMany(StudySessionAttachment::class);
+    }
 }
