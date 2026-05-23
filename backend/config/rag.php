@@ -64,8 +64,8 @@ return [
     | chunks during retrieval.
     */
     'chunking' => [
-        'target_tokens' => env('RAG_CHUNK_TARGET_TOKENS', 800),
-        'overlap_tokens' => env('RAG_CHUNK_OVERLAP_TOKENS', 120),
+        'target_tokens' => (int) env('RAG_CHUNK_TARGET_TOKENS', 800),
+        'overlap_tokens' => (int) env('RAG_CHUNK_OVERLAP_TOKENS', 120),
     ],
 
     /*
