@@ -1,14 +1,13 @@
 <?php
 
+use App\Http\Controllers\API\AttachmentController;
 use App\Http\Controllers\API\AuthController;
-use App\Http\Controllers\API\EvaluationController;
 use App\Http\Controllers\API\FlashcardController;
 use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\OtpController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\QuizResultController;
 use App\Http\Controllers\API\SessionLogController;
-use App\Http\Controllers\API\StudySessionAttachmentController;
 use App\Http\Controllers\API\StudySessionController;
 use App\Http\Controllers\API\UserDailyStatController;
 use Illuminate\Support\Facades\Route;
@@ -29,9 +28,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('session-logs', SessionLogController::class)->only(['index', 'store', 'show', 'destroy']);
     Route::apiResource('user-daily-stats', UserDailyStatController::class)->only(['index', 'show']);
     Route::prefix('study-sessions/{study_session}')->group(function () {
-        Route::get('/attachments', [StudySessionAttachmentController::class, 'index']);
-        Route::post('/attachments', [StudySessionAttachmentController::class, 'store']);
-        Route::get('/attachments/{attachment}', [StudySessionAttachmentController::class, 'show']);
-        Route::delete('/attachments/{attachment}', [StudySessionAttachmentController::class, 'destroy']);
+        Route::apiResource('/attachments', AttachmentController::class)->only(['index', 'store', 'show', 'destroy']);
     });
 });

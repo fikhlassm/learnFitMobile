@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attachment;
 use App\Models\StudySession;
-use App\Models\StudySessionAttachment;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -12,7 +12,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
 use Spatie\PdfToText\Pdf;
 
-class StudySessionAttachmentController extends Controller implements HasMiddleware
+class AttachmentController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
@@ -37,7 +37,8 @@ class StudySessionAttachmentController extends Controller implements HasMiddlewa
         ]);
 
         $file = $request->file('file');
-        $originalName = $file->getClientOriginalName();
+
+        $fileName = $file->getClientOriginalName();
         $mimeType = $file->getMimeType();
         $fileContent = match ($mimeType) {
             'application/pdf' => Pdf::getText($file->getRealPath()),
@@ -48,7 +49,7 @@ class StudySessionAttachmentController extends Controller implements HasMiddlewa
             $storedPath = $file->store('', 'study-materials');
 
             $attachment = $studySession->studySessionAttachments()->create([
-                'original_name' => $originalName,
+                'file_name' => $fileName,
                 'stored_path' => $storedPath,
                 'mime_type' => $mimeType,
                 'file_content' => $fileContent,
@@ -71,13 +72,13 @@ class StudySessionAttachmentController extends Controller implements HasMiddlewa
         }
     }
 
-    public function show(Request $request, StudySession $studySession, StudySessionAttachment $attachment)
+    public function show(Request $request, StudySession $studySession, Attachment $attachment)
     {
         return response()->json([
             'data' => $attachment], 200);
     }
 
-    public function destroy(Request $request, StudySession $studySession, StudySessionAttachment $attachment)
+    public function destroy(Request $request, StudySession $studySession, Attachment $attachment)
     {
         Storage::disk('study-materials')->delete($attachment->stored_path);
         $attachment->delete();
