@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('study_session_attachments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('study_session_id')->constrained()->cascadeOnDelete();
-            $table->uuid('rag_document_id')->nullable();
-            $table->string('original_name');
+            $table->string('file_name');
             $table->string('stored_path');
             $table->string('mime_type');
             $table->longText('file_content')->nullable();

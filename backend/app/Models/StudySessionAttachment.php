@@ -12,13 +12,6 @@ class StudySessionAttachment extends Model
 
     protected $guarded = [];
 
-    protected function casts(): array
-    {
-        return [
-            'rag_document_id' => 'string',
-        ];
-    }
-
     public function studySession(): BelongsTo
     {
         return $this->belongsTo(StudySession::class);
