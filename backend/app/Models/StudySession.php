@@ -35,6 +35,6 @@ class StudySession extends Model
 
     public function studySessionAttachments(): HasMany
     {
-        return $this->hasMany(StudySessionAttachment::class);
+        return $this->hasMany(Attachment::class);
     }
 }
