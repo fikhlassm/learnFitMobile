@@ -20,7 +20,7 @@ class DocumentEmbedder
             $cleanText = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $cleanText);
 
             return $cleanText;
-        })->toArray();
+        })->all();
 
         $response = Embeddings::for($texts)->generate();
 
@@ -28,7 +28,7 @@ class DocumentEmbedder
             $cleanHeading = $chunk['heading'] ? iconv('UTF-8', 'UTF-8//IGNORE', $chunk['heading']) : null;
             $cleanHeading = $cleanHeading ? preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $cleanHeading) : null;
 
-            DocumentChunk::create([
+            DocumentChunk::query()->create([
                 'source' => $attachment->file_name,
                 'chunk_text' => $texts[$index],
                 'metadata' => [
