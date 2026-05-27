@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\ProcessEmbeddings;
 use App\Models\Attachment;
 use App\Models\StudySession;
 use App\Services\DocumentChunker;
