@@ -14,6 +14,7 @@ class DocumentChunk extends Model
         'chunk_text',
         'metadata',
         'embedding',
+        'study_session_id'
     ];
 
     protected function casts(): array
