@@ -12,6 +12,7 @@ return new class extends Migration
 
         Schema::create('document_chunks', function (Blueprint $table) {
             $table->id();
+            $table->integer('study_session_id');
             $table->string('source');
             $table->text('chunk_text');
             $table->json('metadata')->nullable();

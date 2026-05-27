@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessEmbeddings;
 use App\Models\Attachment;
 use App\Models\StudySession;
 use Exception;
@@ -37,9 +38,9 @@ class AttachmentController extends Controller implements HasMiddleware
         ]);
 
         $file = $request->file('file');
-
         $fileName = $file->getClientOriginalName();
         $mimeType = $file->getMimeType();
+        $storedPath = null;
         $fileContent = match ($mimeType) {
             'application/pdf' => Pdf::getText($file->getRealPath()),
             default => file_get_contents($file->getRealPath()),
@@ -52,8 +53,9 @@ class AttachmentController extends Controller implements HasMiddleware
                 'file_name' => $fileName,
                 'stored_path' => $storedPath,
                 'mime_type' => $mimeType,
-                'file_content' => $fileContent,
             ]);
+
+            dispatch(new ProcessEmbeddings($attachment, $fileContent));
 
             return response()->json([
                 'data' => $attachment,
