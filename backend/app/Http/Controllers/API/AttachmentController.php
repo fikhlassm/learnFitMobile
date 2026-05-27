@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ProcessEmbeddings;
 use App\Models\Attachment;
 use App\Models\StudySession;
+use App\Services\DocumentChunker;
+use App\Services\DocumentEmbedder;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -31,7 +33,7 @@ class AttachmentController extends Controller implements HasMiddleware
             'data' => $attachments], 200);
     }
 
-    public function store(Request $request, StudySession $studySession)
+    public function store(Request $request, StudySession $studySession, DocumentChunker $chunker, DocumentEmbedder $embeddingService)
     {
         $request->validate([
             'file' => ['required', 'file', 'max:51200', 'mimes:txt,md,pdf'],
@@ -55,7 +57,9 @@ class AttachmentController extends Controller implements HasMiddleware
                 'mime_type' => $mimeType,
             ]);
 
-            dispatch(new ProcessEmbeddings($attachment, $fileContent));
+            // ingestion
+            $chunks = $chunker->chunk($fileName, $fileContent);
+            $embeddingService->process($attachment, $chunks);
 
             return response()->json([
                 'data' => $attachment,
