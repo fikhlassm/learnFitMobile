@@ -25,17 +25,21 @@ class DocumentEmbedder
         $response = Embeddings::for($texts)->generate();
 
         foreach ($chunks as $index => $chunk) {
+            $cleanHeading = $chunk['heading'] ? iconv('UTF-8', 'UTF-8//IGNORE', $chunk['heading']) : null;
+            $cleanHeading = $cleanHeading ? preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $cleanHeading) : null;
+
             DocumentChunk::create([
                 'source' => $attachment->file_name,
-                'chunk_text' => $chunk['text'],
+                'chunk_text' => $texts[$index],
                 'metadata' => [
-                    'heading' => $chunk['heading'],
-                    'hash' => hash('sha256', $chunk['text']),
+                    'heading' => $cleanHeading,
+                    'hash' => hash('sha256', $texts[$index]),
                     'attachment_id' => $attachment->id,
                 ],
                 'study_session_id' => $attachment->study_session_id,
                 'embedding' => $response->embeddings[$index],
             ]);
         }
+
     }
 }
