@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AttachmentController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\EvaluationController;
 use App\Http\Controllers\API\FlashcardController;
 use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\OtpController;
@@ -29,5 +30,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('user-daily-stats', UserDailyStatController::class)->only(['index', 'show']);
     Route::prefix('study-sessions/{study_session}')->group(function () {
         Route::apiResource('/attachments', AttachmentController::class)->only(['index', 'store', 'show', 'destroy']);
+        Route::post('/evaluate', [EvaluationController::class, 'evaluate']);
     });
 });
