@@ -1,5 +1,6 @@
 <?php
 
+use App\Ai\Agents\BlurtingAgent;
 use App\Http\Controllers\API\AttachmentController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\FlashcardController;
