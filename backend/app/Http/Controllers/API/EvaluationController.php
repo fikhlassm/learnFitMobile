@@ -7,9 +7,18 @@ use App\Ai\Agents\FeynmanAgent;
 use App\Http\Controllers\Controller;
 use App\Models\StudySession;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class EvaluationController extends Controller
+class EvaluationController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:modify,study_session', only: ['evaluate']),
+        ];
+    }
+
     public function evaluate(Request $request, StudySession $studySession)
     {
         $request-> validate([
