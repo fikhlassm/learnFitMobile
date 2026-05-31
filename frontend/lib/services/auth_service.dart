@@ -23,7 +23,6 @@ class AuthService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Auto-detect token dari berbagai kemungkinan field
         String? token = 
           data['token'] ?? 
           data['access_token'] ?? 
@@ -90,6 +89,61 @@ class AuthService {
     }
   }
 
+  /// POST /api/register ← TAMBAHAN BARU
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        String? token = 
+          data['token'] ?? 
+          data['access_token'] ?? 
+          data['data']?['token'] ?? 
+          data['data']?['access_token'];
+
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', token);
+        }
+        
+        return {
+          'success': true,
+          'data': data,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Registrasi gagal',
+          'errors': data['errors'],
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Koneksi gagal: ${e.toString()}',
+      };
+    }
+  }  // ← Tutup method register
+
   /// Helper: Get headers dengan token otomatis
   static Future<Map<String, String>> getAuthHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -100,4 +154,4 @@ class AuthService {
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
-}
+}  // ← ⚠️ CLASS AuthService selesai di sini
