@@ -21,8 +21,8 @@ class EvaluationController extends Controller implements HasMiddleware
 
     public function evaluate(Request $request, StudySession $studySession)
     {
-        $request-> validate([
-            'text' => ['required', 'min:10']
+        $request->validate([
+            'text' => ['required', 'min:10'],
         ]);
 
         $prompt = $request->text;
@@ -31,7 +31,7 @@ class EvaluationController extends Controller implements HasMiddleware
         $technique = $studySession->studyTechnique->name;
 
         try {
-            if($technique === 'feynman') {
+            if ($technique === 'feynman') {
                 $response = FeynmanAgent::make($studySessionId)->prompt($prompt);
             }
 
@@ -47,7 +47,6 @@ class EvaluationController extends Controller implements HasMiddleware
                 'message' => 'The AI evaluation service is currently unavailable. Please try again later.',
             ], 503);
         }
-
 
     }
 }

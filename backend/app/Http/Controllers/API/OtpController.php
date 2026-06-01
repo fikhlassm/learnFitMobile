@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use SadiqSalau\LaravelOtp\Facades\Otp;
 
@@ -24,10 +25,14 @@ class OtpController extends Controller
             ], 403);
         }
 
+        $user = User::query()->where('email', $request->email)->first();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'status' => 'success',
             'message' => 'Account verified and created successfully.',
-            'data' => $otp['result'],
+            'access_token' => $token,
+            'token_type' => 'Bearer',
         ], 201);
     }
 

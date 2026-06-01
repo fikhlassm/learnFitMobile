@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('grade');
+            $table->string('grade')->nullable();
             $table->string('password');
             $table->date('last_study_date')->nullable();
             $table->unsignedInteger('current_streak')->default(0);

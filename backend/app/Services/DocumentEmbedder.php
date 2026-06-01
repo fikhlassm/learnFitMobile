@@ -20,12 +20,12 @@ class DocumentEmbedder
             $cleanText = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $cleanText);
 
             return $cleanText;
-        })->toArray();
+        })->all();
 
         $response = Embeddings::for($texts)->generate();
 
         foreach ($chunks as $index => $chunk) {
-            DocumentChunk::create([
+            DocumentChunk::query()->create([
                 'source' => $attachment->file_name,
                 'chunk_text' => $chunk['text'],
                 'metadata' => [
