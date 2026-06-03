@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/profile_service.dart'; // Pastikan path ini benar
 
 class PersonalInformationPage extends StatefulWidget {
   const PersonalInformationPage({super.key});
@@ -9,9 +10,21 @@ class PersonalInformationPage extends StatefulWidget {
 }
 
 class _PersonalInformationPageState extends State<PersonalInformationPage> {
-  final _nameController = TextEditingController(text: 'Amin Suramin');
-  final _emailController = TextEditingController(text: 'amin.suramin@gmail.com');
-  final _gradeController = TextEditingController(text: 'Grade 11');
+  final _profileService = ProfileService();
+  
+  // Controller untuk input field
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _gradeController = TextEditingController();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
 
   @override
   void dispose() {
@@ -19,6 +32,104 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     _emailController.dispose();
     _gradeController.dispose();
     super.dispose();
+  }
+
+  // 1. FETCH DATA PROFIL DARI BACKEND
+  Future<void> _fetchUserProfile() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _profileService.getProfile();
+
+      if (result['success']) {
+        final data = result['data'];
+        
+        // DEBUG: Cek data apa yang diterima dari backend di Terminal/Console
+        print('📦 Full Data Profile: $data');
+        print('🎓 Grade Value: ${data['grade']}');
+
+        setState(() {
+          _nameController.text = data['name'] ?? '';
+          _emailController.text = data['email'] ?? '';
+          
+          // Fallback logic: Coba ambil 'grade', jika null coba 'academic_grade', dst.
+          _gradeController.text = data['grade'] ?? 
+                                  data['academic_grade'] ?? 
+                                  data['class_level'] ?? 
+                                  ''; 
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Gagal memuat data')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // 2. UPDATE DATA PROFIL KE BACKEND
+  Future<void> _saveChanges() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama tidak boleh kosong')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final result = await _profileService.updateProfile(
+        name: _nameController.text.trim(),
+        grade: _gradeController.text.trim(),
+      );
+
+      if (mounted) {
+        if (result['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Perubahan berhasil disimpan!'),
+              backgroundColor: Color(0xFF4CAF50),
+            ),
+          );
+          Navigator.pop(context); // Kembali ke halaman profil
+        } else {
+          String errorMsg = result['message'] ?? 'Gagal menyimpan perubahan';
+          
+          // Cek error validasi spesifik dari backend
+          if (result['errors'] != null) {
+            final errors = result['errors'];
+            if (errors['name'] != null) errorMsg = errors['name'][0];
+            if (errors['grade'] != null) errorMsg = errors['grade'][0];
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg)),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -35,15 +146,29 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
-                    _buildAvatarSection(),
+                    
+                    // Tampilkan Loading Indicator jika sedang fetch data
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: CircularProgressIndicator(),
+                      )
+                    else
+                      _buildAvatarSection(),
+                      
                     const SizedBox(height: 28),
+                    
                     _buildField('FULL NAME', _nameController),
                     const SizedBox(height: 14),
+                    
+                    // Email read-only karena identitas utama
                     _buildField('EMAIL ADDRESS', _emailController,
-                        keyboardType: TextInputType.emailAddress),
+                        keyboardType: TextInputType.emailAddress, readOnly: true),
+                    
                     const SizedBox(height: 14),
                     _buildField('ACADEMIC GRADE', _gradeController,
-                        readOnly: true, showGradeIcon: true),
+                        readOnly: false, showGradeIcon: true), 
+                    
                     const SizedBox(height: 32),
                     _buildSaveButton(context),
                   ],
@@ -143,6 +268,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
             controller: controller,
             keyboardType: keyboardType,
             readOnly: readOnly,
+            enabled: !_isSaving, // Disable saat saving
             decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding:
@@ -166,15 +292,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Perubahan berhasil disimpan!'),
-              backgroundColor: Color(0xFF4CAF50),
-            ),
-          );
-          Navigator.pop(context);
-        },
+        onPressed: _isSaving ? null : _saveChanges,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF2196F3),
           shape: RoundedRectangleBorder(
@@ -182,14 +300,23 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        child: const Text(
-          'SAVE CHANGES',
-          style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 0.8),
-        ),
+        child: _isSaving
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'SAVE CHANGES',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.8),
+              ),
       ),
     );
   }

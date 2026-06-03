@@ -143,6 +143,7 @@ class _NotebookPageState
       case 'Active Recall':
         return ActiveRecallSessionPage(
           topicTitle: title,
+          token: "0",
         );
 
       case 'Feynman Technique':

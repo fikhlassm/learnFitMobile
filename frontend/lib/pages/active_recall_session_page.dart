@@ -81,8 +81,7 @@ class _ActiveRecallSessionPageState
 
       final data =
           await FlashcardService
-              .getFlashcards(
-        widget.token,
+              .getFlashcards(token: widget.token, studySessionId: 1
       );
 
       setState(() {

@@ -23,7 +23,7 @@ class QuizResultPage extends StatelessWidget {
     if (method == 'Pomodoro') {
       page = PomodoroSessionPage(topicTitle: topic);
     } else if (method == 'Active Recall') {
-      page = ActiveRecallSessionPage(topicTitle: topic);
+      page = ActiveRecallSessionPage(topicTitle: topic, token: "0");
     } else if (method == 'Feynman Technique') {
       page = FeynmanSessionPage(topicTitle: topic);
     } else if (method == 'Blurting') {

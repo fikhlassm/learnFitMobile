@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/auth_service.dart'; // Pastikan path ini benar
 import 'welcome_page.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -19,11 +20,16 @@ class _VerificationPageState extends State<VerificationPage> {
   int _secondsRemaining = 119; // 01:59
   Timer? _timer;
   bool _canResend = false;
+  bool _isLoading = false;
+  
+  final _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
     _startTimer();
+    // Opsional: Auto-resend saat halaman dibuka pertama kali jika perlu
+    // _resendCode(isInitial: true); 
   }
 
   void _startTimer() {
@@ -40,14 +46,69 @@ class _VerificationPageState extends State<VerificationPage> {
     });
   }
 
-  void _resendCode() {
-    if (!_canResend) return;
-    for (var c in _controllers) {
-      c.clear();
+  // Fungsi untuk memanggil API Resend OTP
+  Future<void> _resendCode({bool isInitial = false}) async {
+    if (!_canResend && !isInitial) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Panggil method resendOtp dari AuthService (kita buat di bawah)
+      final result = await _authService.resendOtp(widget.email);
+
+      if (result['success']) {
+        _showSnackBar('Kode OTP baru telah dikirim!', isSuccess: true);
+        _startTimer(); // Reset timer
+        // Clear input fields
+        for (var c in _controllers) {
+          c.clear();
+        }
+        _focusNodes[0].requestFocus();
+      } else {
+        _showSnackBar(result['message'] ?? 'Gagal mengirim ulang kode.');
+      }
+    } catch (e) {
+      _showSnackBar('Terjadi kesalahan: ${e.toString()}');
+    } finally {
+      setState(() => _isLoading = false);
     }
-    _focusNodes[0].requestFocus();
-    _startTimer();
-    setState(() {});
+  }
+
+  // Fungsi untuk memanggil API Verify OTP
+  Future<void> _verifyOtp() async {
+    if (!_isComplete) return;
+
+    // Gabungkan 6 digit menjadi satu string
+    final otpCode = _controllers.map((c) => c.text).join();
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _authService.verifyOtp(widget.email, otpCode);
+
+      if (result['success']) {
+        _showSnackBar('Verifikasi berhasil!', isSuccess: true);
+        
+        // Jika backend return token setelah verify, simpan di sini
+        // if (result['data']['token'] != null) { ... }
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const WelcomePage()),
+        );
+      } else {
+        _showSnackBar(result['message'] ?? 'Kode OTP salah atau kedaluwarsa.');
+        // Opsional: Clear fields jika error
+        for (var c in _controllers) {
+          c.clear();
+        }
+        _focusNodes[0].requestFocus();
+      }
+    } catch (e) {
+      _showSnackBar('Terjadi kesalahan: ${e.toString()}');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   String get _timerText {
@@ -75,6 +136,16 @@ class _VerificationPageState extends State<VerificationPage> {
     }
   }
 
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess ? Colors.green[400] : Colors.red[400],
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -95,8 +166,6 @@ class _VerificationPageState extends State<VerificationPage> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-
-            // ── App Bar ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Stack(
@@ -128,10 +197,7 @@ class _VerificationPageState extends State<VerificationPage> {
                 ],
               ),
             ),
-
             const SizedBox(height: 36),
-
-            // ── Email Icon ──
             Container(
               width: 72,
               height: 72,
@@ -145,10 +211,7 @@ class _VerificationPageState extends State<VerificationPage> {
                 size: 36,
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // ── Title ──
             const Text(
               'Verifikasi Email',
               style: TextStyle(
@@ -157,14 +220,11 @@ class _VerificationPageState extends State<VerificationPage> {
                 color: Colors.black87,
               ),
             ),
-
             const SizedBox(height: 10),
-
-            // ── Subtitle ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Kami telah mengirimkan kode OTP ke email\nkamu. Silakan masukkan di bawah ini.',
+                'Kami telah mengirimkan kode OTP ke email\n${widget.email}. Silakan masukkan di bawah ini.',
                 style: TextStyle(
                   fontSize: 13.5,
                   color: Colors.grey[500],
@@ -173,10 +233,7 @@ class _VerificationPageState extends State<VerificationPage> {
                 textAlign: TextAlign.center,
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // ── OTP Fields ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -194,6 +251,7 @@ class _VerificationPageState extends State<VerificationPage> {
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         maxLength: 1,
+                        enabled: !_isLoading, // Disable saat loading
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -235,10 +293,7 @@ class _VerificationPageState extends State<VerificationPage> {
                 }),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // ── Resend & Timer ──
             Column(
               children: [
                 Row(
@@ -252,13 +307,13 @@ class _VerificationPageState extends State<VerificationPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: _canResend ? _resendCode : null,
+                      onTap: _canResend && !_isLoading ? () => _resendCode() : null,
                       child: Text(
                         'Kirim ulang kode',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: _canResend
+                          color: (_canResend && !_isLoading)
                               ? const Color(0xFF2196F3)
                               : Colors.grey[400],
                         ),
@@ -287,25 +342,14 @@ class _VerificationPageState extends State<VerificationPage> {
                 ],
               ],
             ),
-
             const Spacer(),
-
-            // ── Tombol Verifikasi ──
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
               child: SizedBox(
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: _isComplete
-                      ? () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const WelcomePage()),
-                          );
-                        }
-                      : null,
+                  onPressed: (_isComplete && !_isLoading) ? _verifyOtp : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
                     disabledBackgroundColor:
@@ -315,14 +359,23 @@ class _VerificationPageState extends State<VerificationPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Verifikasi',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Verifikasi',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ),
