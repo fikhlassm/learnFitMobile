@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/auth_service.dart'; // Pastikan path ini benar
+import '../services/auth_service.dart'; 
 import 'welcome_page.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -28,8 +28,6 @@ class _VerificationPageState extends State<VerificationPage> {
   void initState() {
     super.initState();
     _startTimer();
-    // Opsional: Auto-resend saat halaman dibuka pertama kali jika perlu
-    // _resendCode(isInitial: true); 
   }
 
   void _startTimer() {
@@ -46,19 +44,18 @@ class _VerificationPageState extends State<VerificationPage> {
     });
   }
 
-  // Fungsi untuk memanggil API Resend OTP
-  Future<void> _resendCode({bool isInitial = false}) async {
-    if (!_canResend && !isInitial) return;
+  Future<void> _resendCode() async {
+    if (!_canResend || _isLoading) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Panggil method resendOtp dari AuthService (kita buat di bawah)
       final result = await _authService.resendOtp(widget.email);
 
       if (result['success']) {
         _showSnackBar('Kode OTP baru telah dikirim!', isSuccess: true);
         _startTimer(); // Reset timer
+        
         // Clear input fields
         for (var c in _controllers) {
           c.clear();
@@ -70,15 +67,15 @@ class _VerificationPageState extends State<VerificationPage> {
     } catch (e) {
       _showSnackBar('Terjadi kesalahan: ${e.toString()}');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) { // Penting: Cek apakah widget masih aktif
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  // Fungsi untuk memanggil API Verify OTP
   Future<void> _verifyOtp() async {
-    if (!_isComplete) return;
+    if (!_isComplete || _isLoading) return;
 
-    // Gabungkan 6 digit menjadi satu string
     final otpCode = _controllers.map((c) => c.text).join();
 
     setState(() => _isLoading = true);
@@ -89,13 +86,12 @@ class _VerificationPageState extends State<VerificationPage> {
       if (result['success']) {
         _showSnackBar('Verifikasi berhasil!', isSuccess: true);
         
-        // Jika backend return token setelah verify, simpan di sini
-        // if (result['data']['token'] != null) { ... }
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const WelcomePage()),
-        );
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const WelcomePage()),
+          );
+        }
       } else {
         _showSnackBar(result['message'] ?? 'Kode OTP salah atau kedaluwarsa.');
         // Opsional: Clear fields jika error
@@ -107,7 +103,9 @@ class _VerificationPageState extends State<VerificationPage> {
     } catch (e) {
       _showSnackBar('Terjadi kesalahan: ${e.toString()}');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -120,23 +118,22 @@ class _VerificationPageState extends State<VerificationPage> {
   bool get _isComplete =>
       _controllers.every((c) => c.text.isNotEmpty);
 
+  // Logika input yang lebih baik
   void _onChanged(String value, int index) {
-    if (value.length == 1 && index < 5) {
-      _focusNodes[index + 1].requestFocus();
+    if (value.length == 1) {
+      // Jika ada isi, pindah ke berikutnya
+      if (index < 5) {
+        _focusNodes[index + 1].requestFocus();
+      }
+    } else if (value.isEmpty && index > 0) {
+      // Jika dihapus (backspace), kembali ke sebelumnya
+      _focusNodes[index - 1].requestFocus();
     }
     setState(() {});
   }
 
-  void _onKeyEvent(KeyEvent event, int index) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.backspace &&
-        _controllers[index].text.isEmpty &&
-        index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
-  }
-
   void _showSnackBar(String message, {bool isSuccess = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -239,53 +236,49 @@ class _VerificationPageState extends State<VerificationPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) {
-                  return KeyboardListener(
-                    focusNode: FocusNode(),
-                    onKeyEvent: (event) => _onKeyEvent(event, index),
-                    child: SizedBox(
-                      width: 46,
-                      height: 54,
-                      child: TextField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        maxLength: 1,
-                        enabled: !_isLoading, // Disable saat loading
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                  return SizedBox(
+                    width: 46,
+                    height: 54,
+                    child: TextField(
+                      controller: _controllers[index],
+                      focusNode: _focusNodes[index],
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      maxLength: 1,
+                      enabled: !_isLoading,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      onChanged: (val) => _onChanged(val, index),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        filled: true,
+                        fillColor: const Color(0xFFF5F5F5),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        onChanged: (val) => _onChanged(val, index),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          filled: true,
-                          fillColor: const Color(0xFFF5F5F5),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF2196F3),
+                            width: 1.5,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF2196F3),
-                              width: 1.5,
-                            ),
-                          ),
-                          hintText: '—',
-                          hintStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                          ),
+                        ),
+                        hintText: '—',
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -307,7 +300,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: _canResend && !_isLoading ? () => _resendCode() : null,
+                      onTap: _canResend && !_isLoading ? _resendCode : null,
                       child: Text(
                         'Kirim ulang kode',
                         style: TextStyle(

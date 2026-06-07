@@ -1,8 +1,71 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'notebook_page.dart';
 import 'statistics_page.dart';
 import 'profile_page.dart';
 import 'pomodoro_session_page.dart';
+import 'active_recall_session_page.dart';
+import 'blurting_session_page.dart';
+import 'feynman_session_page.dart';
+import '../services/flash_card_service.dart';
+
+// ─────────────────────────── Service helpers ───────────────────────────
+
+class _HomeApiService {
+  static const String _baseUrl = 'http://localhost:8000/api';
+
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
+  static Map<String, String> _headers(String token) => {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+  static Future<Map<String, dynamic>> fetchProfile() async {
+    final token = await _getToken();
+    if (token == null) return {};
+    try {
+      final res = await http.get(Uri.parse('$_baseUrl/profile'), headers: _headers(token));
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        return body['data'] as Map<String, dynamic>;
+      }
+    } catch (e) {
+      print('Error fetchProfile: $e');
+    }
+    return {};
+  }
+
+  static Future<Map<String, dynamic>> fetchTodayDailyStat() async {
+    final token = await _getToken();
+    if (token == null) return {'total_seconds': 0};
+    try {
+      final res = await http.get(Uri.parse('$_baseUrl/user-daily-stats'), headers: _headers(token));
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final list = body['data'] as List<dynamic>;
+        final today = DateTime.now();
+        final todayStr =
+            '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+        final match = list.cast<Map<String, dynamic>>().firstWhere(
+              (e) => e['date'] == todayStr,
+              orElse: () => {},
+            );
+        return match;
+      }
+    } catch (e) {
+      print('Error fetchDailyStat: $e');
+    }
+    return {'total_seconds': 0};
+  }
+}
+
+// ─────────────────────────── HomePage ───────────────────────────
 
 class HomePage extends StatefulWidget {
   final int initialIndex;
@@ -25,7 +88,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Pass onNavTap so child pages can also switch tabs
     final pages = [
       _HomeContent(onNavTap: _onNavTap),
       const NotebookPage(),
@@ -36,15 +98,13 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: _BottomNav(
-        selectedIndex: _selectedIndex,
-        onTap: _onNavTap,
-      ),
+      bottomNavigationBar: _BottomNav(selectedIndex: _selectedIndex, onTap: _onNavTap),
     );
   }
 }
 
 // ═══════════════════════════ Bottom Nav ═══════════════════════════
+
 class _BottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
@@ -55,13 +115,7 @@ class _BottomNav extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 14,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, -2))],
       ),
       child: SafeArea(
         top: false,
@@ -99,15 +153,9 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isActive ? activeIcon : icon, size: 24,
-                color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
+            Icon(isActive ? activeIcon : icon, size: 24, color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
             const SizedBox(height: 3),
-            Text(label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
-                )),
+            Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? const Color(0xFF2196F3) : Colors.grey[400])),
           ],
         ),
       ),
@@ -116,62 +164,256 @@ class _NavItem extends StatelessWidget {
 }
 
 // ═══════════════════════════ Home Content ═══════════════════════════
-class _HomeContent extends StatelessWidget {
+
+class _HomeContent extends StatefulWidget {
   final ValueChanged<int> onNavTap;
   const _HomeContent({required this.onNavTap});
 
   @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent> {
+  bool _loading = true;
+  String _userName = '';
+  String _streak = '-';
+  String _dailyFocus = '-';
+  String _masteryCount = '-';
+
+  // Progress: berapa menit sudah belajar hari ini & target user
+  int _studiedMinutes = 0;
+  int _targetMinutes = 0; // 0 = belum set
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHomeData();
+    _loadSavedTarget();
+  }
+
+  // ── Simpan & muat target dari SharedPreferences ──────────────────────
+
+  Future<void> _loadSavedTarget() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    // Hanya pakai target yang disimpan untuk hari ini
+    final savedDate = prefs.getString('target_date') ?? '';
+    if (savedDate == todayStr) {
+      final saved = prefs.getInt('target_minutes') ?? 0;
+      if (mounted) setState(() => _targetMinutes = saved);
+    }
+  }
+
+  Future<void> _saveTarget(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    await prefs.setInt('target_minutes', minutes);
+    await prefs.setString('target_date', todayStr);
+  }
+
+  // ── Load data API ────────────────────────────────────────────────────
+
+  Future<void> _loadHomeData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token == null) {
+        setState(() => _loading = false);
+        return;
+      }
+
+      final results = await Future.wait([
+        _HomeApiService.fetchProfile(),
+        _HomeApiService.fetchTodayDailyStat(),
+        FlashcardService.getTotalFlashcards(token),
+      ]);
+
+      final profile = results[0] as Map<String, dynamic>;
+      final dailyStat = results[1] as Map<String, dynamic>;
+      final totalCards = results[2] as int;
+
+      if (!mounted) return;
+
+      setState(() {
+        _userName = (profile['name'] ?? '').toString().split(' ').first;
+        _streak = '${profile['current_streak'] ?? 0} Hari';
+
+        final totalSeconds = dailyStat['total_seconds'];
+        final minutes = totalSeconds != null ? (totalSeconds as num).toInt() ~/ 60 : 0;
+        _studiedMinutes = minutes;
+
+        if (minutes >= 60) {
+          final h = minutes ~/ 60;
+          final m = minutes % 60;
+          _dailyFocus = m > 0 ? '${h}j ${m}m' : '${h}j';
+        } else {
+          _dailyFocus = '${minutes}m';
+        }
+
+        _masteryCount = '$totalCards Cards';
+        _loading = false;
+      });
+    } catch (e) {
+      print('Error loading home data: $e');
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // ── Dialog set target ────────────────────────────────────────────────
+
+  void _showSetTargetDialog() {
+    // Pre-fill dengan target sebelumnya jika ada
+    final hoursCtrl = TextEditingController(
+      text: _targetMinutes > 0 ? (_targetMinutes ~/ 60).toString() : '',
+    );
+    final minutesCtrl = TextEditingController(
+      text: _targetMinutes > 0 ? (_targetMinutes % 60).toString() : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Set Target Belajar Hari Ini',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Berapa jam kamu akan belajar hari ini?',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                // Input jam
+                Expanded(
+                  child: TextField(
+                    controller: hoursCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      labelText: 'Jam',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(':', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                ),
+                // Input menit
+                Expanded(
+                  child: TextField(
+                    controller: minutesCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      labelText: 'Menit',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2196F3),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              final h = int.tryParse(hoursCtrl.text.trim()) ?? 0;
+              final m = int.tryParse(minutesCtrl.text.trim()) ?? 0;
+              final total = h * 60 + m;
+              if (total > 0) {
+                setState(() => _targetMinutes = total);
+                _saveTarget(total);
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────
+
+  @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildAppBar(),
-            const SizedBox(height: 6),
-            const Divider(height: 1, color: Color(0xFFEEEEEE)),
-            const SizedBox(height: 20),
-            _buildStatsRow(),
-            const SizedBox(height: 16),
-            _buildProgressCard(context),
-            const SizedBox(height: 20),
-            _buildRecommendationSection(context),
-            const SizedBox(height: 20),
-          ],
+      child: RefreshIndicator(
+        onRefresh: _loadHomeData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAppBar(),
+              const SizedBox(height: 6),
+              const Divider(height: 1, color: Color(0xFFEEEEEE)),
+              const SizedBox(height: 20),
+              _buildStatsRow(),
+              const SizedBox(height: 16),
+              _buildProgressCard(context),
+              const SizedBox(height: 20),
+              _buildRecommendationSection(context),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  // ── App Bar ──────────────────────────────────────────────────────────
 
   Widget _buildAppBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.grey.shade200,
-            child: const Icon(Icons.person, color: Colors.grey, size: 28),
-          ),
+          CircleAvatar(radius: 22, backgroundColor: Colors.grey.shade200, child: const Icon(Icons.person, color: Colors.grey, size: 28)),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hi, Amin!',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black87)),
-                Text('Bagaimana kabarmu hari ini?',
-                    style: TextStyle(fontSize: 12.5, color: Color(0xFF9E9E9E))),
+                _loading
+                    ? _shimmer(width: 100, height: 16)
+                    : Text('Hi, ${_userName.isNotEmpty ? _userName : 'Pengguna'}!',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black87)),
+                const SizedBox(height: 2),
+                const Text('Bagaimana kabarmu hari ini?', style: TextStyle(fontSize: 12.5, color: Color(0xFF9E9E9E))),
               ],
             ),
           ),
           Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)],
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]),
             child: const Icon(Icons.notifications_none_rounded, color: Colors.black87, size: 22),
           ),
         ],
@@ -179,22 +421,24 @@ class _HomeContent extends StatelessWidget {
     );
   }
 
+  // ── Stats Row ────────────────────────────────────────────────────────
+
   Widget _buildStatsRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _statCard(Icons.local_fire_department_rounded, const Color(0xFFFF7043), 'Streak', '12 Hari'),
+          _statCard(Icons.local_fire_department_rounded, const Color(0xFFFF7043), 'Streak', _loading ? null : _streak),
           const SizedBox(width: 12),
-          _statCard(Icons.access_time_rounded, const Color(0xFF2196F3), 'Daily Focus', '4.5j'),
+          _statCard(Icons.access_time_rounded, const Color(0xFF2196F3), 'Daily Focus', _loading ? null : _dailyFocus),
           const SizedBox(width: 12),
-          _statCard(Icons.auto_awesome_rounded, const Color(0xFF9C27B0), 'Mastery', '86 Cards'),
+          _statCard(Icons.auto_awesome_rounded, const Color(0xFF9C27B0), 'Mastery', _loading ? null : _masteryCount),
         ],
       ),
     );
   }
 
-  Widget _statCard(IconData icon, Color color, String label, String value) {
+  Widget _statCard(IconData icon, Color color, String label, String? value) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
@@ -209,14 +453,55 @@ class _HomeContent extends StatelessWidget {
             const SizedBox(height: 6),
             Text(label, style: TextStyle(fontSize: 10.5, color: Colors.grey[500], fontWeight: FontWeight.w500)),
             const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
+            value == null
+                ? _shimmer(width: 48, height: 14)
+                : Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
           ],
         ),
       ),
     );
   }
 
+  // ── Progress Card ────────────────────────────────────────────────────
+
   Widget _buildProgressCard(BuildContext context) {
+    // Hitung progress: studied / target
+    final double progress = _targetMinutes > 0
+        ? (_studiedMinutes / _targetMinutes).clamp(0.0, 1.0)
+        : 0.0;
+    final int pct = (progress * 100).round();
+
+    // Sisa waktu
+final int safeTarget = _targetMinutes > 0 ? _targetMinutes : 0;
+final int safeStudied = _studiedMinutes > 0 ? _studiedMinutes : 0;
+
+// Hitung sisa, pastikan tidak negatif
+final int remainingMin = (safeTarget - safeStudied).clamp(0, 99999);
+
+String remainingLabel;
+if (_targetMinutes == 0 || _targetMinutes == null) {
+  remainingLabel = 'Target belum diset';
+} else if (remainingMin <= 0) {
+  remainingLabel = 'Target tercapai! 🎉';
+} else {
+  // Konversi menit ke Jam & Menit dengan benar
+  final int hours = remainingMin ~/ 60; 
+  final int minutes = remainingMin % 60;
+  
+  if (hours > 0) {
+    remainingLabel = 'TERSISA ${hours}J ${minutes}M';
+  } else {
+    remainingLabel = 'TERSISA ${minutes}M';
+  }
+}
+
+    // Label progress
+    final String progressLabel = _targetMinutes == 0
+        ? 'Set target dulu untuk mulai tracking'
+        : pct >= 100
+            ? 'Kamu sudah mencapai target hari ini!'
+            : 'Kamu Mencapai $pct% Target Harian!';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -233,6 +518,7 @@ class _HomeContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -240,36 +526,62 @@ class _HomeContent extends StatelessWidget {
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
                   child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 16),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text('Kamu Mencapai 75% Target Harian!',
-                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.85))),
+            Text(progressLabel, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.85))),
             const SizedBox(height: 14),
+            // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: 0.75,
+                value: progress,
                 backgroundColor: Colors.white.withOpacity(0.3),
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 minHeight: 7,
               ),
             ),
             const SizedBox(height: 10),
+            // Info baris bawah
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('3 / 4 TUGAS SELESAI',
-                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85), fontWeight: FontWeight.w600)),
-                Text('TERSISA 1J 15M',
-                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85))),
+                Text(
+                  _targetMinutes > 0
+                      ? 'FOKUS: $_dailyFocus / ${_targetMinutes >= 60 ? '${_targetMinutes ~/ 60}J ${_targetMinutes % 60 > 0 ? '${_targetMinutes % 60}M' : ''}' : '${_targetMinutes}M'}'
+                      : 'FOKUS HARI INI: $_dailyFocus',
+                  style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85), fontWeight: FontWeight.w600),
+                ),
+                Text(remainingLabel, style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85))),
               ],
+            ),
+            const SizedBox(height: 14),
+            // Tombol set target
+            GestureDetector(
+              onTap: _showSetTargetDialog,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.flag_outlined, color: Colors.white, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      _targetMinutes > 0 ? 'Ubah Target Hari Ini' : 'Set Target Hari Ini',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -277,28 +589,50 @@ class _HomeContent extends StatelessWidget {
     );
   }
 
+  // ── Recommendation Section ───────────────────────────────────────────
+
   Widget _buildRecommendationSection(BuildContext context) {
+    final techniques = [
+      _TechniqueData(
+        icon: Icons.timer_outlined,
+        color: const Color(0xFF2196F3),
+        title: 'Pomodoro',
+        subtitle: 'Bagi belajar ke dalam sesi fokus 25 menit diselingi istirahat singkat.',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PomodoroSessionPage())),
+      ),
+      _TechniqueData(
+        icon: Icons.edit_note_outlined,
+        color: const Color(0xFFFF7043),
+        title: 'Blurting',
+        subtitle: 'Tulis semua yang kamu ingat tentang suatu topik secepat mungkin tanpa henti.',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlurtingSessionPage())),
+      ),
+      _TechniqueData(
+        icon: Icons.school_outlined,
+        color: const Color(0xFF9C27B0),
+        title: 'Feynman',
+        subtitle: 'Kuasai materi dengan menjelaskannya menggunakan bahasa yang sederhana.',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FeynmanSessionPage())),
+      ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Rekomendasi',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
+          const Text('Teknik Belajar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
           const SizedBox(height: 12),
-          _recCard(context,
-            icon: Icons.timer_outlined,
-            iconColor: const Color(0xFF2196F3),
-            title: 'Pomodoro',
-            subtitle: 'Teknik yang membagi pekerjaan ke dalam sesi fokus 25 menit dan istirahat singkat.',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PomodoroSessionPage())),
-          ),
+          ...techniques.map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _recCard(context, data: t),
+              )),
         ],
       ),
     );
   }
 
-  Widget _recCard(BuildContext context, {required IconData icon, required Color iconColor, required String title, required String subtitle, required VoidCallback onTap}) {
+  Widget _recCard(BuildContext context, {required _TechniqueData data}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -310,29 +644,26 @@ class _HomeContent extends StatelessWidget {
         children: [
           Container(
             width: 48, height: 48,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
+            decoration: BoxDecoration(color: data.color.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+            child: Icon(data.icon, color: data.color, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
+                Text(data.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4)),
+                Text(data.subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4)),
               ],
             ),
           ),
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: onTap,
+            onTap: data.onTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(color: const Color(0xFF2196F3), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: data.color, borderRadius: BorderRadius.circular(20)),
               child: const Text('Mulai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
           ),
@@ -340,378 +671,30 @@ class _HomeContent extends StatelessWidget {
       ),
     );
   }
+
+  // ── Shimmer placeholder ──────────────────────────────────────────────
+
+  Widget _shimmer({required double width, required double height}) {
+    return Container(
+      width: width, height: height,
+      decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(6)),
+    );
+  }
 }
-class StatisticsPage extends StatefulWidget {
-  const StatisticsPage({super.key});
 
-  @override
-  State<StatisticsPage> createState() => _StatisticsPageState();
-}
+// ═══════════════════════════ Data model ═══════════════════════════
 
-class _StatisticsPageState extends State<StatisticsPage> {
-  int _selectedPeriod = 1; // 0=Hari, 1=Minggu, 2=Bulan, 3=Tahun
-
-  final List<String> _periods = ['Hari', 'Minggu', 'Bulan', 'Tahun'];
-
-  final List<Map<String, dynamic>> _weekData = [
-    {'day': 'Sen', 'value': 0.45},
-    {'day': 'Sel', 'value': 0.55},
-    {'day': 'Rab', 'value': 0.3},
-    {'day': 'Kam', 'value': 0.4},
-    {'day': 'Jum', 'value': 0.2},
-    {'day': 'Sab', 'value': 0.15},
-    {'day': 'Min', 'value': 0.95},
-  ];
-
-  final List<Map<String, dynamic>> _recentActivities = [
-    {
-      'title': 'Fungsi Eksponensial',
-      'type': 'Pomodoro',
-      'duration': '2j 0m',
-      'status': 'SELESAI',
-      'icon': Icons.calculate_outlined,
-      'color': Color(0xFF2196F3),
-    },
-    {
-      'title': 'Struktur Sel',
-      'type': 'Active Recall',
-      'duration': '45m',
-      'status': 'SELESAI',
-      'icon': Icons.science_outlined,
-      'color': Color(0xFF4CAF50),
-    },
-    {
-      'title': 'Gerak Melingkar',
-      'type': 'Feynman',
-      'duration': '1j 15m',
-      'status': 'SELESAI',
-      'icon': Icons.speed_outlined,
-      'color': Color(0xFFFF7043),
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildAppBar(context),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildPeriodTabs(),
-                    const SizedBox(height: 20),
-                    _buildTotalHoursCard(),
-                    const SizedBox(height: 16),
-                    _buildBarChart(),
-                    const SizedBox(height: 20),
-                    _buildSummaryRow(),
-                    const SizedBox(height: 24),
-                    _buildRecentActivities(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.maybePop(context),
-            child: const Icon(Icons.chevron_left, color: Color(0xFF2196F3), size: 28),
-          ),
-          const Expanded(
-            child: Text(
-              'Statistik Belajar',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87),
-            ),
-          ),
-          const SizedBox(width: 28),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPeriodTabs() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: List.generate(_periods.length, (i) {
-          final isSelected = _selectedPeriod == i;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedPeriod = i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 9),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.07),
-                            blurRadius: 5,
-                          )
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  _periods[i],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? const Color(0xFF2196F3) : Colors.grey[500],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildTotalHoursCard() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Jam Belajar Minggu Ini',
-          style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              '24.5 jam',
-              style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black87),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.trending_up_rounded,
-                      color: Color(0xFF4CAF50), size: 14),
-                  SizedBox(width: 3),
-                  Text('+12%',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF4CAF50))),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBarChart() {
-    return Container(
-      height: 160,
-      padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: _weekData.map((data) {
-          final isToday = data['day'] == 'Min';
-          return _buildBar(data['day'], data['value'], isToday);
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildBar(String day, double value, bool isActive) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              width: 32,
-              height: 120 * value,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? const Color(0xFF2196F3)
-                    : const Color(0xFFDDE8F5),
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(day,
-            style: TextStyle(
-                fontSize: 11.5,
-                color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.w400)),
-      ],
-    );
-  }
-
-  Widget _buildSummaryRow() {
-    return Row(
-      children: [
-        _summaryCard(Icons.access_time_rounded, const Color(0xFF2196F3),
-            'Total Waktu', '24j 30m'),
-        const SizedBox(width: 12),
-        _summaryCard(Icons.bar_chart_rounded, const Color(0xFF2196F3),
-            'Rata-rata', '3.5j /hari'),
-        const SizedBox(width: 12),
-        _summaryCard(Icons.trending_up_rounded, const Color(0xFF4CAF50),
-            'Peningkatan', '+12%', valueColor: const Color(0xFF4CAF50)),
-      ],
-    );
-  }
-
-  Widget _summaryCard(IconData icon, Color iconColor, String label, String value,
-      {Color? valueColor}) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: iconColor, size: 20),
-            const SizedBox(height: 6),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10, color: Colors.grey[500])),
-            const SizedBox(height: 4),
-            Text(value,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: valueColor ?? Colors.black87)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivities() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Aktivitas Terkini',
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87),
-        ),
-        const SizedBox(height: 12),
-        ..._recentActivities.map((activity) => _activityItem(activity)),
-      ],
-    );
-  }
-
-  Widget _activityItem(Map<String, dynamic> activity) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: (activity['color'] as Color).withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(activity['icon'] as IconData,
-                color: activity['color'] as Color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(activity['title'],
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87)),
-                const SizedBox(height: 2),
-                Text(activity['type'],
-                    style: TextStyle(fontSize: 11.5, color: Colors.grey[500])),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(activity['duration'],
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87)),
-              const SizedBox(height: 2),
-              Text(activity['status'],
-                  style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF4CAF50))),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+class _TechniqueData {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _TechniqueData({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 }
