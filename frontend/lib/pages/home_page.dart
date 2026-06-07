@@ -9,11 +9,13 @@ import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
 import 'feynman_session_page.dart';
+// Pastikan path import sesuai struktur folder kamu
 import '../services/flash_card_service.dart';
 
 // ─────────────────────────── Service helpers ───────────────────────────
 
 class _HomeApiService {
+  // Gunakan localhost untuk Web, atau IP laptop/10.0.2.2 untuk emulator
   static const String _baseUrl = 'http://localhost:8000/api';
 
   static Future<String?> _getToken() async {
@@ -98,7 +100,10 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: _BottomNav(selectedIndex: _selectedIndex, onTap: _onNavTap),
+      bottomNavigationBar: _BottomNav(
+        selectedIndex: _selectedIndex,
+        onTap: _onNavTap,
+      ),
     );
   }
 }
@@ -115,7 +120,13 @@ class _BottomNav extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 14,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -182,7 +193,7 @@ class _HomeContentState extends State<_HomeContent> {
 
   // Progress: berapa menit sudah belajar hari ini & target user
   int _studiedMinutes = 0;
-  int _targetMinutes = 0; // 0 = belum set
+  int _targetMinutes = 0; // 0 = belum diset
 
   @override
   void initState() {
@@ -219,17 +230,12 @@ class _HomeContentState extends State<_HomeContent> {
 
   Future<void> _loadHomeData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      if (token == null) {
-        setState(() => _loading = false);
-        return;
-      }
-
+      // Fetch Paralel: Profile, Daily Stats, DAN Total Flashcards
+      // getTotalFlashcards() tidak butuh parameter token
       final results = await Future.wait([
         _HomeApiService.fetchProfile(),
         _HomeApiService.fetchTodayDailyStat(),
-        FlashcardService.getTotalFlashcards(token),
+        FlashcardService.getTotalFlashcards(),
       ]);
 
       final profile = results[0] as Map<String, dynamic>;
@@ -239,9 +245,13 @@ class _HomeContentState extends State<_HomeContent> {
       if (!mounted) return;
 
       setState(() {
+        // Name
         _userName = (profile['name'] ?? '').toString().split(' ').first;
+
+        // Streak
         _streak = '${profile['current_streak'] ?? 0} Hari';
 
+        // Daily Focus (konversi detik → menit)
         final totalSeconds = dailyStat['total_seconds'];
         final minutes = totalSeconds != null ? (totalSeconds as num).toInt() ~/ 60 : 0;
         _studiedMinutes = minutes;
@@ -254,7 +264,9 @@ class _HomeContentState extends State<_HomeContent> {
           _dailyFocus = '${minutes}m';
         }
 
+        // Mastery
         _masteryCount = '$totalCards Cards';
+
         _loading = false;
       });
     } catch (e) {
@@ -266,7 +278,6 @@ class _HomeContentState extends State<_HomeContent> {
   // ── Dialog set target ────────────────────────────────────────────────
 
   void _showSetTargetDialog() {
-    // Pre-fill dengan target sebelumnya jika ada
     final hoursCtrl = TextEditingController(
       text: _targetMinutes > 0 ? (_targetMinutes ~/ 60).toString() : '',
     );
@@ -292,7 +303,6 @@ class _HomeContentState extends State<_HomeContent> {
             const SizedBox(height: 20),
             Row(
               children: [
-                // Input jam
                 Expanded(
                   child: TextField(
                     controller: hoursCtrl,
@@ -312,7 +322,6 @@ class _HomeContentState extends State<_HomeContent> {
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   child: Text(':', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
                 ),
-                // Input menit
                 Expanded(
                   child: TextField(
                     controller: minutesCtrl,
@@ -404,8 +413,10 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 _loading
                     ? _shimmer(width: 100, height: 16)
-                    : Text('Hi, ${_userName.isNotEmpty ? _userName : 'Pengguna'}!',
-                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black87)),
+                    : Text(
+                        'Hi, ${_userName.isNotEmpty ? _userName : 'Pengguna'}!',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black87),
+                      ),
                 const SizedBox(height: 2),
                 const Text('Bagaimana kabarmu hari ini?', style: TextStyle(fontSize: 12.5, color: Color(0xFF9E9E9E))),
               ],
@@ -413,7 +424,11 @@ class _HomeContentState extends State<_HomeContent> {
           ),
           Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)],
+            ),
             child: const Icon(Icons.notifications_none_rounded, color: Colors.black87, size: 22),
           ),
         ],
@@ -465,28 +480,33 @@ class _HomeContentState extends State<_HomeContent> {
   // ── Progress Card ────────────────────────────────────────────────────
 
   Widget _buildProgressCard(BuildContext context) {
-    // Hitung progress: studied / target
     final double progress = _targetMinutes > 0
         ? (_studiedMinutes / _targetMinutes).clamp(0.0, 1.0)
         : 0.0;
     final int pct = (progress * 100).round();
 
-    // Sisa waktu
     final int remainingMin = (_targetMinutes - _studiedMinutes).clamp(0, 99999);
     final String remainingLabel = _targetMinutes == 0
         ? 'Target belum diset'
         : remainingMin == 0
             ? 'Target tercapai! 🎉'
             : remainingMin >= 60
-                ? 'TERSISA ${remainingMin ~/ 60}J ${remainingMin % 60}M'
+                ? 'TERSISA ${remainingMin ~/ 60}J ${remainingMin % 60 > 0 ? '${remainingMin % 60}M' : ''}'
                 : 'TERSISA ${remainingMin}M';
 
-    // Label progress
     final String progressLabel = _targetMinutes == 0
         ? 'Set target dulu untuk mulai tracking'
         : pct >= 100
             ? 'Kamu sudah mencapai target hari ini!'
             : 'Kamu Mencapai $pct% Target Harian!';
+
+    // Format label target
+    String targetLabel = '';
+    if (_targetMinutes > 0) {
+      final th = _targetMinutes ~/ 60;
+      final tm = _targetMinutes % 60;
+      targetLabel = th > 0 && tm > 0 ? '${th}j ${tm}m' : th > 0 ? '${th}j' : '${tm}m';
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -537,7 +557,7 @@ class _HomeContentState extends State<_HomeContent> {
               children: [
                 Text(
                   _targetMinutes > 0
-                      ? 'FOKUS: $_dailyFocus / ${_targetMinutes >= 60 ? '${_targetMinutes ~/ 60}J ${_targetMinutes % 60 > 0 ? '${_targetMinutes % 60}M' : ''}' : '${_targetMinutes}M'}'
+                      ? 'FOKUS: $_dailyFocus / $targetLabel'
                       : 'FOKUS HARI INI: $_dailyFocus',
                   style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85), fontWeight: FontWeight.w600),
                 ),
@@ -545,7 +565,7 @@ class _HomeContentState extends State<_HomeContent> {
               ],
             ),
             const SizedBox(height: 14),
-            // Tombol set target
+            // Tombol set / ubah target
             GestureDetector(
               onTap: _showSetTargetDialog,
               child: Container(
@@ -587,13 +607,6 @@ class _HomeContentState extends State<_HomeContent> {
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PomodoroSessionPage())),
       ),
       _TechniqueData(
-        icon: Icons.psychology_outlined,
-        color: const Color(0xFF4CAF50),
-        title: 'Active Recall',
-        subtitle: 'Uji pemahamanmu dengan menjawab pertanyaan dari memori tanpa melihat catatan.',
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActiveRecallSessionPage())),
-      ),
-      _TechniqueData(
         icon: Icons.edit_note_outlined,
         color: const Color(0xFFFF7043),
         title: 'Blurting',
@@ -614,7 +627,8 @@ class _HomeContentState extends State<_HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Teknik Belajar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
+          const Text('Teknik Belajar',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
           const SizedBox(height: 12),
           ...techniques.map((t) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),

@@ -5,6 +5,7 @@ import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
 import 'quiz_page.dart';
+import 'new_note_sheet.dart';
 
 class NotebookPage extends StatefulWidget {
   const NotebookPage({super.key});
@@ -192,7 +193,7 @@ class _NotebookPageState extends State<NotebookPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const QuizPage()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const NewNoteSheet()));
         },
         backgroundColor: const Color(0xFF2196F3),
         shape: const CircleBorder(),

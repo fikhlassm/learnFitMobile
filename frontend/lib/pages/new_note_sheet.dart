@@ -60,15 +60,16 @@ const _methods = [
 ];
 
 class NewNoteSheet extends StatefulWidget {
-  const NewNoteSheet({super.key});
+  final int? studySessionId;
+  
+  const NewNoteSheet({super.key, this.studySessionId});
 
-  /// Panggil ini dari FAB
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(BuildContext context, {int? studySessionId}) {
     return showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Penting agar bisa full height & scrollable
       backgroundColor: Colors.transparent,
-      builder: (_) => const NewNoteSheet(),
+      builder: (_) => NewNoteSheet(studySessionId: studySessionId),
     );
   }
 
@@ -86,13 +87,13 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
     super.dispose();
   }
 
-  // ── Routing ke session page ──
-  Widget _sessionPageFor(String method, String title) {
+  Widget _getSessionPage(String method, String title) {
+    final sessionId = widget.studySessionId ?? 0;
     switch (method) {
       case 'Pomodoro':
         return PomodoroSessionPage(topicTitle: title);
       case 'Active Recall':
-        return ActiveRecallSessionPage(topicTitle: title, studySessionId: );
+        return ActiveRecallSessionPage(topicTitle: title, studySessionId: sessionId);
       case 'Feynman Technique':
         return FeynmanSessionPage(topicTitle: title);
       case 'Blurting':
@@ -102,35 +103,38 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
     }
   }
 
-  void _startSession() {
+  void _startSession(BuildContext btnContext) {
     final title = _titleController.text.trim();
 
+    // Validasi ketat sebelum navigasi
     if (title.isEmpty) {
-      _showSnackbar('Masukkan judul catatan terlebih dahulu.');
+      ScaffoldMessenger.of(btnContext).showSnackBar(
+        SnackBar(
+          content: const Text('Masukkan judul catatan terlebih dahulu.'),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        ),
+      );
       return;
     }
+    
     if (_selectedMethod == null) {
-      _showSnackbar('Pilih teknik belajar terlebih dahulu.');
+      ScaffoldMessenger.of(btnContext).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih teknik belajar terlebih dahulu.'),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        ),
+      );
       return;
     }
 
-    Navigator.pop(context); // tutup sheet
+    Navigator.pop(context); 
+    
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _sessionPageFor(_selectedMethod!, title),
-      ),
-    );
-  }
-
-  void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        duration: const Duration(seconds: 2),
+        builder: (_) => _getSessionPage(_selectedMethod!, title),
       ),
     );
   }
@@ -139,194 +143,146 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottomPadding + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Handle bar ──
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDDDDDD),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-
-          // ── Header ──
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        // PERBAIKAN UTAMA: Bungkus Column dengan SingleChildScrollView
+        // Agar tombol Start Session tetap bisa diakses saat keyboard terbuka
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 0, 20, bottomPadding + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Catatan Baru',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-              ),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
+              // Handle bar
+              Center(
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 36, height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0F0),
-                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFFDDDDDD),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  child: const Icon(Icons.close,
-                      size: 18, color: Colors.black54),
                 ),
               ),
+
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Catatan Baru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87)),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: const Color(0xFFF0F0F0), borderRadius: BorderRadius.circular(20)),
+                      child: const Icon(Icons.close, size: 18, color: Colors.black54),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Input Judul
+              TextField(
+                controller: _titleController,
+                autofocus: true, // Langsung fokus saat sheet terbuka
+                style: const TextStyle(fontSize: 14.5, color: Colors.black87),
+                decoration: const InputDecoration(
+                  hintText: 'Masukkan judul catatan...',
+                  hintStyle: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14.5),
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFDDDDDD))),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFDDDDDD))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2196F3), width: 1.5)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Quiz Banner
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const QuizPage()));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F8FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFDCE8FF)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: const Color(0xFFE3F2FD), borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.help_outline_rounded, size: 16, color: Color(0xFF2196F3)),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(child: Text('Metode mana yang harus saya ambil?\nLakukan quiz!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87, height: 1.4))),
+                      const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFAAAAAA)),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Label Teknik
+              const Text('TEKNIK BELAJAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFAAAAAA), letterSpacing: 1.1)),
+              const SizedBox(height: 10),
+
+              // Grid Metode
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1.55,
+                children: _methods.map((m) => _buildMethodCard(m)).toList(),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Tombol Start
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _startSession(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [Text('Start Session', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)), SizedBox(width: 6), Icon(Icons.arrow_forward_rounded, size: 18)],
+                  ),
+                ),
+              ),
+              
+              // Tambahkan spacer ekstra di bawah tombol untuk memastikan 
+              // tidak tertutup keyboard di layar kecil
+              SizedBox(height: bottomPadding > 0 ? 20 : 0), 
             ],
           ),
-
-          const SizedBox(height: 20),
-
-          // ── Input Judul ──
-          TextField(
-            controller: _titleController,
-            style: const TextStyle(fontSize: 14.5, color: Colors.black87),
-            decoration: const InputDecoration(
-              hintText: 'Masukkan judul catatan...',
-              hintStyle: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14.5),
-              border: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFDDDDDD)),
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFDDDDDD)),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide:
-                    BorderSide(color: Color(0xFF2196F3), width: 1.5),
-              ),
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 8),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Quiz Suggestion Banner ──
-          GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QuizPage()),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F8FF),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFDCE8FF)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.help_outline_rounded,
-                        size: 16, color: Color(0xFF2196F3)),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Metode mana yang harus saya ambil?\nLakukan quiz!',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded,
-                      size: 20, color: Color(0xFFAAAAAA)),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ── Section label ──
-          const Text(
-            'TEKNIK BELAJAR',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFFAAAAAA),
-              letterSpacing: 1.1,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // ── Method Grid 2x2 ──
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1.55,
-            children: _methods.map((m) => _buildMethodCard(m)).toList(),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ── Start Session Button ──
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _startSession,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2196F3),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Start Session',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildMethodCard(_MethodOption method) {
     final isSelected = _selectedMethod == method.id;
-
     return GestureDetector(
       onTap: () => setState(() => _selectedMethod = method.id),
       child: AnimatedContainer(
@@ -336,10 +292,7 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
         decoration: BoxDecoration(
           color: isSelected ? method.bgColor : const Color(0xFFFAFAFA),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? method.color : const Color(0xFFEEEEEE),
-            width: isSelected ? 1.8 : 1,
-          ),
+          border: Border.all(color: isSelected ? method.color : const Color(0xFFEEEEEE), width: isSelected ? 1.8 : 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,52 +303,23 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
                 Container(
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? method.color.withOpacity(0.15)
-                        : const Color(0xFFEEEEEE),
+                    color: isSelected ? method.color.withOpacity(0.15) : const Color(0xFFEEEEEE),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    method.icon,
-                    size: 16,
-                    color: isSelected ? method.color : const Color(0xFFAAAAAA),
-                  ),
+                  child: Icon(method.icon, size: 16, color: isSelected ? method.color : const Color(0xFFAAAAAA)),
                 ),
                 if (isSelected)
                   Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: method.color,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 11,
-                      color: Colors.white,
-                    ),
+                    decoration: BoxDecoration(color: method.color, shape: BoxShape.circle),
+                    child: const Icon(Icons.check, size: 11, color: Colors.white),
                   ),
               ],
             ),
             const Spacer(),
-            Text(
-              method.label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? method.color : Colors.black87,
-              ),
-            ),
+            Text(method.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isSelected ? method.color : Colors.black87)),
             const SizedBox(height: 2),
-            Text(
-              method.description,
-              style: const TextStyle(
-                fontSize: 10.5,
-                color: Color(0xFFAAAAAA),
-                height: 1.3,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(method.description, style: const TextStyle(fontSize: 10.5, color: Color(0xFFAAAAAA), height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
