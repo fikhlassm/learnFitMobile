@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'registration_page.dart';
 import 'welcome_page.dart';
 import '../services/auth_service.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -233,25 +234,30 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             // ── Lupa Password ──
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Lupa Password?',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF2196F3),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
+Align(
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
+      );
+    },
+    style: TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      minimumSize: Size.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+    child: const Text(
+      'Lupa Password?',
+      style: TextStyle(
+        fontSize: 13,
+        color: Color(0xFF2196F3),
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  ),
+),
 
             const SizedBox(height: 8),
 

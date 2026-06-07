@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';  // ← Import AuthService
-import '../pages/login_page.dart';        // ← Import LoginPage untuk navigasi logout
+// ✅ GANTI IMPORT INI SESUAI NAMA FILE YANG KAMU BUAT
+import '../services/profile_service.dart'; 
+import '../services/auth_service.dart';       // Tetap butuh untuk Logout
+import '../pages/login_page.dart';
 import 'personal_information_page.dart';
 import 'study_reminders_page.dart';
 import 'privacy_security_page.dart';
@@ -14,8 +16,65 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final _authService = AuthService();  // ← Instance AuthService
-  bool _isLoggingOut = false;          // ← Loading state untuk logout
+  // ✅ INSTANSIASI SERVICE YANG BENAR
+  final _authService = AuthService();
+  final _profileService = ProfileService(); 
+
+  bool _isLoggingOut = false;
+  bool _isLoadingProfile = true;
+  
+  // Variabel untuk menyimpan data profil
+  String _name = 'Loading...';
+  String _email = '';
+  String _grade = '-'; 
+  String _joinDate = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    setState(() => _isLoadingProfile = true);
+
+    // ✅ PANGGIL METHOD DARI ProfileService, BUKAN AuthService
+    final result = await _profileService.getProfile();
+
+    if (result['success']) {
+      final data = result['data'];
+      setState(() {
+        _name = data['name'] ?? 'User';
+        _email = data['email'] ?? '';
+        // Asumsi backend mengirim field 'grade' atau sejenisnya
+        _grade = data['grade'] ?? 'Grade 11'; 
+        
+        // Format tanggal join jika ada, atau hardcode sementara
+        if (data['created_at'] != null) {
+           try {
+            final date = DateTime.parse(data['created_at']);
+            final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            _joinDate = 'Joined ${months[date.month - 1]} ${date.year}';
+          } catch (e) {
+            _joinDate = 'Joined recently';
+          }
+        } else {
+          _joinDate = 'Joined recently';
+        }
+      });
+    } else {
+      // Jika gagal, tampilkan nama default atau error
+      setState(() {
+        _name = 'Guest User';
+      });
+      // Opsional: Tampilkan pesan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Gagal memuat profil')),
+      );
+    }
+    
+    setState(() => _isLoadingProfile = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +139,9 @@ class _ProfilePageState extends State<ProfilePage> {
             CircleAvatar(
               radius: 46,
               backgroundColor: Colors.grey.shade200,
-              child: const Icon(Icons.person, color: Colors.grey, size: 52),
+              child: _isLoadingProfile
+                  ? const CircularProgressIndicator()
+                  : const Icon(Icons.person, color: Colors.grey, size: 52),
             ),
             Positioned(
               bottom: 0,
@@ -99,9 +160,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
         const SizedBox(height: 14),
-        const Text(
-          'Amin Suramin',
-          style: TextStyle(
+        Text(
+          _name,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
@@ -117,9 +178,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: const Color(0xFFE3F2FD),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'Grade 11',
-                style: TextStyle(
+              child: Text(
+                _grade,
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF2196F3),
@@ -130,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Text('•', style: TextStyle(color: Colors.grey[400])),
             const SizedBox(width: 8),
             Text(
-              'Joined Sept 2023',
+              _joinDate,
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
           ],
@@ -287,7 +348,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ── DIALOG KONFIRMASI LOGOUT (UPDATED) ──
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -327,27 +387,24 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ── HANDLE LOGOUT API CALL ──
   Future<void> _handleLogout() async {
     setState(() => _isLoggingOut = true);
 
+    // Logout tetap pakai AuthService
     final result = await _authService.logout();
 
-    // Tutup dialog dulu sebelum navigasi
     if (mounted) Navigator.pop(context);
 
     setState(() => _isLoggingOut = false);
 
     if (mounted) {
       if (result['success']) {
-        // ✅ Logout berhasil - hapus semua route & kembali ke login
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
           (route) => false,
         );
       } else {
-        // ❌ Tampilkan error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'] ?? 'Logout gagal')),
         );
