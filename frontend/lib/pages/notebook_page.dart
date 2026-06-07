@@ -111,11 +111,7 @@ class _NotebookPageState extends State<NotebookPage> {
       case 'Active Recall':
         return ActiveRecallSessionPage(
           topicTitle: title,
-<<<<<<< HEAD
-          token: "0",
-=======
           studySessionId: sessionId, // ← DIUBAH: pass session id
->>>>>>> 05783034e75ded4267471e14ed85c23cb3e5f981
         );
       case 'Feynman Technique':
         return FeynmanSessionPage(topicTitle: title);
@@ -203,7 +199,6 @@ class _NotebookPageState extends State<NotebookPage> {
         elevation: 3,
         child: const Icon(Icons.add, color: Colors.white, size: 26),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
