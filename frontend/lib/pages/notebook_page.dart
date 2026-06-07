@@ -108,7 +108,10 @@ class _NotebookPageState extends State<NotebookPage> {
 
   switch (method) {
       case 'Pomodoro':
-        return PomodoroSessionPage(topicTitle: title);
+        return PomodoroSessionPage(
+  topicTitle: title,
+  studySessionId: sessionId,
+);
       case 'Active Recall':
         return ActiveRecallSessionPage(
           topicTitle: title,
@@ -192,15 +195,33 @@ class _NotebookPageState extends State<NotebookPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const NewNoteSheet()));
-        },
-        backgroundColor: const Color(0xFF2196F3),
-        shape: const CircleBorder(),
-        elevation: 3,
-        child: const Icon(Icons.add, color: Colors.white, size: 26),
+  onPressed: () async {
+
+    final result =
+        await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const NewNoteSheet(),
       ),
     );
+
+    if (result == true) {
+      await _loadStudySessions();
+    }
+  },
+  backgroundColor:
+      const Color(0xFF2196F3),
+  shape: const CircleBorder(),
+  elevation: 3,
+  child: const Icon(
+    Icons.add,
+    color: Colors.white,
+    size: 26,
+  ),
+),
+
+);
   }
 
   Widget _buildSummaryCard() {

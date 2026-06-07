@@ -1,20 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../Services/session_log_service.dart';
+import '../services/study_session_service.dart';
 import 'notebook_page.dart';
 
-class PomodoroSessionPage extends StatefulWidget {
+class PomodoroSessionPage extends StatefulWidget{
   final String topicTitle;
+  final int studySessionId;
 
   const PomodoroSessionPage({
     super.key,
+    required this.studySessionId,
     this.topicTitle = 'Fungsi Eksponensial',
   });
-
   @override
-  State<PomodoroSessionPage> createState() =>
-      _PomodoroSessionPageState();
+State<PomodoroSessionPage> createState() =>
+    _PomodoroSessionPageState();
 }
+
 
 class _PomodoroSessionPageState
     extends State<PomodoroSessionPage>
@@ -42,18 +45,48 @@ class _PomodoroSessionPageState
       _circleAnimController;
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    _circleAnimController =
-        AnimationController(
-      vsync: this,
+  _circleAnimController =
+      AnimationController(
+    vsync: this,
+    duration: const Duration(
+      seconds: _workDuration,
+    ),
+  );
 
-      duration: const Duration(
-        seconds: _workDuration,
-      ),
+  _loadSessionData();
+}
+
+Future<void> _loadSessionData() async {
+
+  try {
+
+    final session =
+        await StudySessionService
+            .getStudySession(
+      widget.studySessionId,
     );
+
+    final data =
+        session['data'] ?? session;
+
+    setState(() {
+
+      _notesController.text =
+          data['content'] ?? '';
+
+    });
+
+  } catch (e) {
+
+    print(
+      'LOAD SESSION ERROR = $e',
+    );
+
   }
+}
 
   @override
   void dispose() {
@@ -145,41 +178,77 @@ class _PomodoroSessionPageState
         _remainingSeconds;
   }
 
-  Future<void>
-      _selesaikanSesi() async {
+  Future<void> _selesaikanSesi() async {
 
-    _timer?.cancel();
-
-    try {
-
-      await SessionLogService
-          .createSessionLog(
-
-        studySessionId: 1,
-
-        durationSeconds:
-            _completedDuration,
-      );
-
-    } catch (e) {
-
-      print(e);
-
-    }
-
-    if (!mounted) return;
-
-    Navigator.pushAndRemoveUntil(
-      context,
-
-      MaterialPageRoute(
-        builder: (_) =>
-            const NotebookPage(),
+  if (_isRunning) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Pause timer terlebih dahulu sebelum menyelesaikan sesi',
+        ),
       ),
-
-      (route) => false,
     );
+    return;
   }
+
+  if (_completedDuration <= 0) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Mulai timer terlebih dahulu',
+        ),
+      ),
+    );
+    return;
+  }
+
+  _timer?.cancel();
+
+  try {
+
+    print(
+      'SESSION ID SENT = ${widget.studySessionId}',
+    );
+
+    print(
+      'COMPLETED DURATION = $_completedDuration',
+    );
+
+    await StudySessionService.updateStudySession(
+      id: widget.studySessionId,
+      content: _notesController.text,
+    );
+
+    await SessionLogService.createSessionLog(
+      studySessionId: widget.studySessionId,
+      durationSeconds: _completedDuration,
+    );
+
+    setState(() {
+
+      _remainingSeconds =
+          _workDuration;
+
+      _currentSession = 1;
+
+      _isRunning = false;
+
+    });
+
+    _circleAnimController.reset();
+
+  } catch (e) {
+
+    print(
+      'SESSION ERROR = $e',
+    );
+
+  }
+
+  if (!mounted) return;
+
+  Navigator.pop(context, true);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -712,8 +781,9 @@ class _PomodoroSessionPageState
         height: 52,
 
         child: ElevatedButton(
-          onPressed:
-              _selesaikanSesi,
+          onPressed: () async {
+  await _selesaikanSesi();
+},
 
           style:
               ElevatedButton

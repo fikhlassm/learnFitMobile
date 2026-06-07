@@ -9,6 +9,7 @@ import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
 import 'feynman_session_page.dart';
+import 'new_note_sheet.dart';
 // Pastikan path import sesuai struktur folder kamu
 import '../services/flash_card_service.dart';
 
@@ -599,28 +600,93 @@ class _HomeContentState extends State<_HomeContent> {
 
   Widget _buildRecommendationSection(BuildContext context) {
     final techniques = [
-      _TechniqueData(
-        icon: Icons.timer_outlined,
-        color: const Color(0xFF2196F3),
-        title: 'Pomodoro',
-        subtitle: 'Bagi belajar ke dalam sesi fokus 25 menit diselingi istirahat singkat.',
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PomodoroSessionPage())),
-      ),
-      _TechniqueData(
-        icon: Icons.edit_note_outlined,
-        color: const Color(0xFFFF7043),
-        title: 'Blurting',
-        subtitle: 'Tulis semua yang kamu ingat tentang suatu topik secepat mungkin tanpa henti.',
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BlurtingSessionPage())),
-      ),
-      _TechniqueData(
-        icon: Icons.school_outlined,
-        color: const Color(0xFF9C27B0),
-        title: 'Feynman',
-        subtitle: 'Kuasai materi dengan menjelaskannya menggunakan bahasa yang sederhana.',
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FeynmanSessionPage())),
-      ),
-    ];
+
+  _TechniqueData(
+    icon: Icons.timer_outlined,
+    color: const Color(0xFF2196F3),
+    title: 'Pomodoro',
+    subtitle:
+        'Bagi belajar ke dalam sesi fokus 25 menit diselingi istirahat singkat.',
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const NewNoteSheet(
+            preselectedMethod:
+                'Pomodoro',
+          ),
+        ),
+      );
+    },
+  ),
+
+  _TechniqueData(
+    icon:
+        Icons.psychology_outlined,
+    color:
+        const Color(0xFF2E7D32),
+    title: 'Active Recall',
+    subtitle:
+        'Latih daya ingat dengan menjawab pertanyaan tanpa melihat catatan.',
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const NewNoteSheet(
+            preselectedMethod:
+                'Active Recall',
+          ),
+        ),
+      );
+    },
+  ),
+
+  _TechniqueData(
+    icon:
+        Icons.edit_note_outlined,
+    color:
+        const Color(0xFFFF7043),
+    title: 'Blurting',
+    subtitle:
+        'Tulis semua yang kamu ingat tentang suatu topik secepat mungkin.',
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const NewNoteSheet(
+            preselectedMethod:
+                'Blurting',
+          ),
+        ),
+      );
+    },
+  ),
+
+  _TechniqueData(
+    icon:
+        Icons.school_outlined,
+    color:
+        const Color(0xFF9C27B0),
+    title: 'Feynman',
+    subtitle:
+        'Kuasai materi dengan menjelaskannya menggunakan bahasa sederhana.',
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const NewNoteSheet(
+            preselectedMethod:
+                'Feynman Technique',
+          ),
+        ),
+      );
+    },
+  ),
+];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),

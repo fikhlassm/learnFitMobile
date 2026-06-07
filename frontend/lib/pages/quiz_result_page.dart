@@ -22,7 +22,10 @@ class QuizResultPage extends StatelessWidget {
 
     final Widget page;
     if (method == 'Pomodoro') {
-      page = PomodoroSessionPage(topicTitle: topic);
+      page = PomodoroSessionPage(
+  topicTitle: topic,
+  studySessionId: studySessionId,
+);
     } else if (method == 'Active Recall') {
       page = ActiveRecallSessionPage(
         topicTitle: topic,
@@ -33,7 +36,10 @@ class QuizResultPage extends StatelessWidget {
     } else if (method == 'Blurting') {
       page = BlurtingSessionPage(topicTitle: topic);
     } else {
-      page = PomodoroSessionPage(topicTitle: topic);
+      page = PomodoroSessionPage(
+  topicTitle: topic,
+  studySessionId: studySessionId,
+);
     }
 
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));

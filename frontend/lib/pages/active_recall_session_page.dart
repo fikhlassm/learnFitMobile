@@ -83,7 +83,11 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
       'ANSWER = ${answerController.text}',
     );
 
-    await FlashcardService.createFlashcard(
+print(
+  'BUTTON CLICKED',
+);
+
+await FlashcardService.createFlashcard(
       studySessionId: widget.studySessionId,
       question: questionController.text,
       answer: answerController.text,
@@ -150,11 +154,10 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
   }
 
   void _selesaikanSesi() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const NotebookPage()),
-      (route) => false,
-    );
+    Navigator.pop(
+  context,
+  true,
+);
   }
 
   @override

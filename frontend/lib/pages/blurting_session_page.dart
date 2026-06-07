@@ -40,11 +40,10 @@ class _BlurtingSessionPageState extends State<BlurtingSessionPage> {
   }
 
   void _selesaikanSesi() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const NotebookPage()),
-      (route) => false,
-    );
+    Navigator.pop(
+  context,
+  true,
+);
   }
 
   @override

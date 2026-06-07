@@ -4,6 +4,7 @@ import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
 import 'quiz_page.dart';
+import '../services/study_session_service.dart';
 
 // ── Data model tiap metode ──
 class _MethodOption {
@@ -60,9 +61,17 @@ const _methods = [
 ];
 
 class NewNoteSheet extends StatefulWidget {
+
   final int? studySessionId;
-  
-  const NewNoteSheet({super.key, this.studySessionId});
+
+  final String?
+      preselectedMethod;
+
+  const NewNoteSheet({
+    super.key,
+    this.studySessionId,
+    this.preselectedMethod,
+  });
 
   static Future<void> show(BuildContext context, {int? studySessionId}) {
     return showModalBottomSheet(
@@ -77,9 +86,21 @@ class NewNoteSheet extends StatefulWidget {
   State<NewNoteSheet> createState() => _NewNoteSheetState();
 }
 
-class _NewNoteSheetState extends State<NewNoteSheet> {
-  final _titleController = TextEditingController();
+class _NewNoteSheetState
+    extends State<NewNoteSheet> {
+
+  final _titleController =
+      TextEditingController();
+
   String? _selectedMethod;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _selectedMethod =
+        widget.preselectedMethod;
+  }
 
   @override
   void dispose() {
@@ -87,57 +108,142 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
     super.dispose();
   }
 
-  Widget _getSessionPage(String method, String title) {
-    final sessionId = widget.studySessionId ?? 0;
-    switch (method) {
-      case 'Pomodoro':
-        return PomodoroSessionPage(topicTitle: title);
-      case 'Active Recall':
-        return ActiveRecallSessionPage(topicTitle: title, studySessionId: sessionId);
-      case 'Feynman Technique':
-        return FeynmanSessionPage(topicTitle: title);
-      case 'Blurting':
-        return BlurtingSessionPage(topicTitle: title);
-      default:
-        return FeynmanSessionPage(topicTitle: title);
-    }
+Future<void> _startSession(
+  BuildContext btnContext,
+) async {
+  final title =
+      _titleController.text.trim();
+
+  if (title.isEmpty) {
+    ScaffoldMessenger.of(
+      btnContext,
+    ).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Masukkan judul catatan terlebih dahulu.',
+        ),
+      ),
+    );
+    return;
   }
 
-  void _startSession(BuildContext btnContext) {
-    final title = _titleController.text.trim();
-
-    // Validasi ketat sebelum navigasi
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(btnContext).showSnackBar(
-        SnackBar(
-          content: const Text('Masukkan judul catatan terlebih dahulu.'),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+  if (_selectedMethod == null) {
+    ScaffoldMessenger.of(
+      btnContext,
+    ).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Pilih teknik belajar terlebih dahulu.',
         ),
-      );
-      return;
-    }
-    
-    if (_selectedMethod == null) {
-      ScaffoldMessenger.of(btnContext).showSnackBar(
-        SnackBar(
-          content: const Text('Pilih teknik belajar terlebih dahulu.'),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        ),
-      );
-      return;
+      ),
+    );
+    return;
+  }
+
+  try {
+    int techniqueId = 1;
+
+    switch (_selectedMethod) {
+      case 'Pomodoro':
+        techniqueId = 1;
+        break;
+
+      case 'Feynman Technique':
+        techniqueId = 2;
+        break;
+
+      case 'Active Recall':
+        techniqueId = 3;
+        break;
+
+      case 'Blurting':
+        techniqueId = 4;
+        break;
     }
 
-    Navigator.pop(context); 
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _getSessionPage(_selectedMethod!, title),
+    final response =
+        await StudySessionService
+            .createStudySession(
+      topic: title,
+      studyTechniqueId:
+          techniqueId,
+    );
+
+    print(
+      'CREATE SESSION RESPONSE = $response',
+    );
+
+    final sessionId =
+    response['data']['id'];
+
+    if (!mounted) return;
+
+Widget page;
+
+switch (_selectedMethod) {
+
+  case 'Pomodoro':
+    page = PomodoroSessionPage(
+      topicTitle: title,
+      studySessionId: sessionId,
+    );
+    break;
+
+  case 'Active Recall':
+    page = ActiveRecallSessionPage(
+      topicTitle: title,
+      studySessionId: sessionId,
+    );
+    break;
+
+  case 'Feynman Technique':
+    page = FeynmanSessionPage(
+      topicTitle: title,
+    );
+    break;
+
+  case 'Blurting':
+    page = BlurtingSessionPage(
+      topicTitle: title,
+    );
+    break;
+
+  default:
+    page = FeynmanSessionPage(
+      topicTitle: title,
+    );
+}
+
+final result =
+    await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => page,
+  ),
+);
+
+if (result == true && mounted) {
+  Navigator.pop(
+    context,
+    true,
+  );
+}
+  } catch (e) {
+    print(
+      'CREATE SESSION ERROR = $e',
+    );
+
+    ScaffoldMessenger.of(
+      btnContext,
+    ).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Gagal membuat sesi belajar',
+        ),
       ),
     );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +352,7 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 1.55,
+                childAspectRatio: 1.30,
                 children: _methods.map((m) => _buildMethodCard(m)).toList(),
               ),
 
@@ -281,48 +387,179 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
     );
   }
 
-  Widget _buildMethodCard(_MethodOption method) {
-    final isSelected = _selectedMethod == method.id;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedMethod = method.id),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected ? method.bgColor : const Color(0xFFFAFAFA),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isSelected ? method.color : const Color(0xFFEEEEEE), width: isSelected ? 1.8 : 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: isSelected ? method.color.withOpacity(0.15) : const Color(0xFFEEEEEE),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(method.icon, size: 16, color: isSelected ? method.color : const Color(0xFFAAAAAA)),
-                ),
-                if (isSelected)
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(color: method.color, shape: BoxShape.circle),
-                    child: const Icon(Icons.check, size: 11, color: Colors.white),
-                  ),
-              ],
-            ),
-            const Spacer(),
-            Text(method.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isSelected ? method.color : Colors.black87)),
-            const SizedBox(height: 2),
-            Text(method.description, style: const TextStyle(fontSize: 10.5, color: Color(0xFFAAAAAA), height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
+Widget _buildMethodCard(
+  _MethodOption method,
+) {
+  final isSelected =
+      _selectedMethod == method.id;
+
+  return GestureDetector(
+    onTap: () {
+      setState(() {
+        _selectedMethod =
+            method.id;
+      });
+    },
+
+    child: AnimatedContainer(
+      duration: const Duration(
+        milliseconds: 180,
+      ),
+
+      curve: Curves.easeOut,
+
+      padding:
+          const EdgeInsets.all(12),
+
+      decoration: BoxDecoration(
+        color: isSelected
+            ? method.bgColor
+            : const Color(
+                0xFFFAFAFA),
+
+        borderRadius:
+            BorderRadius.circular(
+                14),
+
+        border: Border.all(
+          color: isSelected
+              ? method.color
+              : const Color(
+                  0xFFEEEEEE),
+
+          width:
+              isSelected ? 1.8 : 1,
         ),
       ),
-    );
-  }
+
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
+        mainAxisAlignment:
+            MainAxisAlignment
+                .spaceBetween,
+
+        children: [
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment
+                    .spaceBetween,
+
+            children: [
+
+              Container(
+                padding:
+                    const EdgeInsets.all(
+                        5),
+
+                decoration:
+                    BoxDecoration(
+                  color: isSelected
+                      ? method.color
+                          .withOpacity(
+                              0.15)
+                      : const Color(
+                          0xFFEEEEEE),
+
+                  borderRadius:
+                      BorderRadius
+                          .circular(
+                              8),
+                ),
+
+                child: Icon(
+                  method.icon,
+                  size: 16,
+
+                  color:
+                      isSelected
+                          ? method.color
+                          : const Color(
+                              0xFFAAAAAA),
+                ),
+              ),
+
+              if (isSelected)
+                Container(
+                  padding:
+                      const EdgeInsets
+                          .all(2),
+
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        method.color,
+
+                    shape:
+                        BoxShape.circle,
+                  ),
+
+                  child: const Icon(
+                    Icons.check,
+                    size: 11,
+                    color:
+                        Colors.white,
+                  ),
+                ),
+            ],
+          ),
+
+          Column(
+            crossAxisAlignment:
+                CrossAxisAlignment
+                    .start,
+
+            children: [
+
+              Text(
+                method.label,
+
+                style: TextStyle(
+                  fontSize: 13,
+
+                  fontWeight:
+                      FontWeight.w700,
+
+                  color:
+                      isSelected
+                          ? method.color
+                          : Colors
+                              .black87,
+                ),
+              ),
+
+              const SizedBox(
+                height: 2,
+              ),
+
+              Text(
+                method.description,
+
+                maxLines: 2,
+
+                overflow:
+                    TextOverflow
+                        .ellipsis,
+
+                style:
+                    const TextStyle(
+                  fontSize: 10.5,
+
+                  color: Color(
+                    0xFFAAAAAA,
+                  ),
+
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 }

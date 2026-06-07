@@ -1,23 +1,42 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionLogService {
-
   static const String baseUrl =
       'http://127.0.0.1:8000/api/session-logs';
+
+  static Future<Map<String, String>> _headers() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final token =
+        prefs.getString('auth_token');
+
+    print(
+      'SESSION LOG TOKEN = $token',
+    );
+
+    return {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization':
+          'Bearer ${token ?? ''}',
+    };
+  }
 
   static Future<void> createSessionLog({
     required int studySessionId,
     required int durationSeconds,
   }) async {
 
+    print(
+      'SESSION LOG ID = $studySessionId',
+    );
+
     final response = await http.post(
       Uri.parse(baseUrl),
 
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+      headers: await _headers(),
 
       body: jsonEncode({
         'study_session_id':
@@ -28,9 +47,16 @@ class SessionLogService {
       }),
     );
 
+    print(
+      'SESSION LOG STATUS = ${response.statusCode}',
+    );
+
+    print(
+      'SESSION LOG BODY = ${response.body}',
+    );
+
     if (response.statusCode != 200 &&
         response.statusCode != 201) {
-
       throw Exception(
         'Failed to save session log',
       );
@@ -43,9 +69,15 @@ class SessionLogService {
     final response = await http.get(
       Uri.parse(baseUrl),
 
-      headers: {
-        'Accept': 'application/json',
-      },
+      headers: await _headers(),
+    );
+
+    print(
+      'GET SESSION LOG STATUS = ${response.statusCode}',
+    );
+
+    print(
+      'GET SESSION LOG BODY = ${response.body}',
     );
 
     if (response.statusCode == 200) {
