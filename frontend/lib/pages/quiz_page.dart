@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/study_session_service.dart';
 import 'quiz_result_page.dart';
 
 class QuizPage extends StatefulWidget {
@@ -11,15 +12,10 @@ class QuizPage extends StatefulWidget {
 class _QuizPageState extends State<QuizPage> {
   int _currentQuestion = 0;
   int? _selectedAnswer;
+  bool _isLoading = false; // ← tambah: loading saat create session
 
-  // Tracks score per method: index 0=Pomodoro, 1=Active Recall, 2=Feynman, 3=Blurting
   final List<int> _scores = [0, 0, 0, 0];
 
-  // Each answer maps to a method index
-  // 0 = Pomodoro (visual / focus)
-  // 1 = Active Recall (auditory / group)
-  // 2 = Feynman Technique (read-write)
-  // 3 = Blurting (kinesthetic)
   final List<Map<String, dynamic>> _questions = [
     {
       'question': 'Ketika belajar hal baru, kamu lebih mudah memahami melalui?',
@@ -59,13 +55,16 @@ class _QuizPageState extends State<QuizPage> {
     },
   ];
 
-  // Method names mapped by index
+  // index metode → study_technique_id di API
   static const List<String> _methods = [
     'Pomodoro',
     'Active Recall',
     'Feynman Technique',
     'Blurting',
   ];
+
+  // study_technique_id sesuai urutan _methods
+  static const List<int> _techniqueIds = [1, 3, 2, 4];
 
   int get _totalQuestions => _questions.length;
   double get _progress => (_currentQuestion + 1) / _totalQuestions;
@@ -78,10 +77,16 @@ class _QuizPageState extends State<QuizPage> {
     return _methods[winnerIndex];
   }
 
-  void _next() {
+  int _determineTechniqueId() {
+    int maxScore = _scores.reduce((a, b) => a > b ? a : b);
+    int winnerIndex = _scores.indexOf(maxScore);
+    return _techniqueIds[winnerIndex];
+  }
+
+  // ← DIUBAH: async, create study session dulu lalu navigasi
+  Future<void> _next() async {
     if (_selectedAnswer == null) return;
 
-    // Accumulate score for selected answer's method
     _scores[_selectedAnswer!]++;
 
     if (!_isLastQuestion) {
@@ -90,13 +95,52 @@ class _QuizPageState extends State<QuizPage> {
         _selectedAnswer = null;
       });
     } else {
+      setState(() => _isLoading = true);
+
       final result = _determineResult();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => QuizResultPage(method: result),
-        ),
-      );
+      final techniqueId = _determineTechniqueId();
+
+      try {
+  final response = await StudySessionService.createStudySession(
+    topic: result,
+    studyTechniqueId: techniqueId,
+  );
+
+  print(
+    'CREATE SESSION RESPONSE = $response',
+  );
+
+  final sessionId = int.tryParse(
+        response['data']?['id']
+                ?.toString() ??
+            '0',
+      ) ??
+      0;
+
+  print(
+    'SESSION ID = $sessionId',
+  );
+
+  if (!mounted) return;
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => QuizResultPage(
+        method: result,
+        studySessionId: sessionId,
+      ),
+    ),
+  );
+} 
+  catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal membuat sesi: $e')),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -124,21 +168,13 @@ class _QuizPageState extends State<QuizPage> {
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.all(6),
-                        child: const Icon(
-                          Icons.chevron_left,
-                          color: Color(0xFF2196F3),
-                          size: 28,
-                        ),
+                        child: const Icon(Icons.chevron_left, color: Color(0xFF2196F3), size: 28),
                       ),
                     ),
                   ),
                   const Text(
                     'Quiz',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.black87),
                   ),
                 ],
               ),
@@ -154,11 +190,7 @@ class _QuizPageState extends State<QuizPage> {
                 children: [
                   Text(
                     _progressLabel,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2196F3),
-                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2196F3)),
                   ),
                   const SizedBox(height: 6),
                   ClipRRect(
@@ -167,9 +199,7 @@ class _QuizPageState extends State<QuizPage> {
                       value: _progress,
                       minHeight: 6,
                       backgroundColor: const Color(0xFFDDE3EE),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF2196F3),
-                      ),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
                     ),
                   ),
                 ],
@@ -213,19 +243,15 @@ class _QuizPageState extends State<QuizPage> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedAnswer = index),
+                          onTap: () => setState(() => _selectedAnswer = index),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(50),
                               border: Border.all(
-                                color: isSelected
-                                    ? const Color(0xFF2196F3)
-                                    : Colors.transparent,
+                                color: isSelected ? const Color(0xFF2196F3) : Colors.transparent,
                                 width: 1.5,
                               ),
                             ),
@@ -238,11 +264,7 @@ class _QuizPageState extends State<QuizPage> {
                                     color: const Color(0xFFE8F0FE),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(
-                                    answer['icon'] as IconData,
-                                    color: const Color(0xFF2196F3),
-                                    size: 18,
-                                  ),
+                                  child: Icon(answer['icon'] as IconData, color: const Color(0xFF2196F3), size: 18),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -251,9 +273,7 @@ class _QuizPageState extends State<QuizPage> {
                                     style: TextStyle(
                                       fontSize: 13.5,
                                       color: Colors.black87,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w500
-                                          : FontWeight.w400,
+                                      fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
                                     ),
                                   ),
                                 ),
@@ -264,9 +284,7 @@ class _QuizPageState extends State<QuizPage> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: isSelected
-                                          ? const Color(0xFF2196F3)
-                                          : Colors.grey.shade300,
+                                      color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade300,
                                       width: isSelected ? 6 : 1.5,
                                     ),
                                     color: Colors.white,
@@ -294,32 +312,32 @@ class _QuizPageState extends State<QuizPage> {
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed: _selectedAnswer != null ? _next : null,
+                      // ← DIUBAH: disable saat loading
+                      onPressed: (_selectedAnswer != null && !_isLoading) ? _next : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
-                        disabledBackgroundColor:
-                            const Color(0xFF2196F3).withOpacity(0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                        disabledBackgroundColor: const Color(0xFF2196F3).withOpacity(0.4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         elevation: 0,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _isLastQuestion ? 'Lihat Hasilnya' : 'Selanjutnya',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                      // ← DIUBAH: tampilkan loading indicator saat proses
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _isLastQuestion ? 'Lihat Hasilnya' : 'Selanjutnya',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.arrow_forward,
-                              color: Colors.white, size: 18),
-                        ],
-                      ),
                     ),
                   ),
 
@@ -327,11 +345,7 @@ class _QuizPageState extends State<QuizPage> {
 
                   Text(
                     'Jawabanmu membantu LearnFit menyesuaikan metode belajarmu.',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Colors.grey[500],
-                      height: 1.5,
-                    ),
+                    style: TextStyle(fontSize: 11.5, color: Colors.grey[500], height: 1.5),
                     textAlign: TextAlign.center,
                   ),
 

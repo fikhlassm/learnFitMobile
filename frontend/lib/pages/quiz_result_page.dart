@@ -7,14 +7,15 @@ import 'blurting_session_page.dart';
 class QuizResultPage extends StatelessWidget {
   final String method;
   final String topicTitle;
+  final int studySessionId; // ← TAMBAH INI
 
   const QuizResultPage({
     super.key,
     required this.method,
+    required this.studySessionId, // ← TAMBAH INI
     this.topicTitle = '',
   });
 
-  // ── Routing ke session page yang benar ──
   void _navigateToSession(BuildContext context) {
     final topic =
         topicTitle.isNotEmpty ? topicTitle : _defaultTopic[method] ?? 'Materi';
@@ -23,7 +24,10 @@ class QuizResultPage extends StatelessWidget {
     if (method == 'Pomodoro') {
       page = PomodoroSessionPage(topicTitle: topic);
     } else if (method == 'Active Recall') {
-      page = ActiveRecallSessionPage(topicTitle: topic, token: "0");
+      page = ActiveRecallSessionPage(
+        topicTitle: topic,
+        studySessionId: studySessionId, // ← TAMBAH INI
+      );
     } else if (method == 'Feynman Technique') {
       page = FeynmanSessionPage(topicTitle: topic);
     } else if (method == 'Blurting') {
@@ -46,7 +50,6 @@ class QuizResultPage extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
 
-            // ── Title ──
             const Text(
               'Metode Belajar',
               style: TextStyle(
@@ -58,7 +61,6 @@ class QuizResultPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ── Hero Card ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
@@ -88,7 +90,6 @@ class QuizResultPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // ── Method Name ──
             Text(
               method,
               style: const TextStyle(
@@ -100,7 +101,6 @@ class QuizResultPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // ── Steps ──
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -188,14 +188,12 @@ class QuizResultPage extends StatelessWidget {
               ),
             ),
 
-            // ── Tombol Mulai Belajar ──
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
               child: SizedBox(
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  // ✅ Panggil _navigateToSession, BUKAN hardcode FeynmanSessionPage
                   onPressed: () => _navigateToSession(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
@@ -229,7 +227,6 @@ class QuizResultPage extends StatelessWidget {
   }
 }
 
-// ── Default topic per method ──
 const Map<String, String> _defaultTopic = {
   'Pomodoro': 'Fungsi Eksponensial',
   'Active Recall': 'Rumus Fisika Semester 2',
@@ -237,7 +234,6 @@ const Map<String, String> _defaultTopic = {
   'Blurting': 'Struktur Sel',
 };
 
-// ── Method Data ──
 const Map<String, Map<String, dynamic>> _methodData = {
   'Pomodoro': {
     'bgColor': Color(0xFFDEEBFB),
@@ -248,10 +244,7 @@ const Map<String, Map<String, dynamic>> _methodData = {
     'steps': [
       {'title': 'Fokus 25 Menit', 'desc': 'Kerjakan tugas tanpa gangguan.'},
       {'title': 'Istirahat 5 Menit', 'desc': 'Penyegaran singkat.'},
-      {
-        'title': 'Ulangi 4 Kali',
-        'desc': 'Lakukan siklus dan ambil istirahat panjang.'
-      },
+      {'title': 'Ulangi 4 Kali', 'desc': 'Lakukan siklus dan ambil istirahat panjang.'},
     ],
   },
   'Active Recall': {
@@ -261,20 +254,9 @@ const Map<String, Map<String, dynamic>> _methodData = {
     'stepColor': Color(0xFFE8F5E9),
     'stepTextColor': Color(0xFF2E7D32),
     'steps': [
-      {
-        'title': 'Pelajari Materi',
-        'desc': 'Pahami konsep dasar secara mendalam dari bacaan.'
-      },
-      {
-        'title': 'Buat Flashcard',
-        'desc':
-            'Tulis pertanyaan dan jawaban di sisi berbeda untuk menguji diri.'
-      },
-      {
-        'title': 'Kuis Berkala',
-        'desc':
-            'Lakukan tes mandiri secara berkala untuk memperkuat ingatan jangka panjang.'
-      },
+      {'title': 'Pelajari Materi', 'desc': 'Pahami konsep dasar secara mendalam dari bacaan.'},
+      {'title': 'Buat Flashcard', 'desc': 'Tulis pertanyaan dan jawaban di sisi berbeda untuk menguji diri.'},
+      {'title': 'Kuis Berkala', 'desc': 'Lakukan tes mandiri secara berkala untuk memperkuat ingatan jangka panjang.'},
     ],
   },
   'Feynman Technique': {
@@ -284,20 +266,9 @@ const Map<String, Map<String, dynamic>> _methodData = {
     'stepColor': Color(0xFFFFF3F3),
     'stepTextColor': Color(0xFFD32F2F),
     'steps': [
-      {
-        'title': 'Pilih Topik',
-        'desc': 'Tentukan konsep spesifik yang ingin kamu kuasai sepenuhnya.'
-      },
-      {
-        'title': 'Jelaskan',
-        'desc':
-            'Jelaskan materi tersebut seolah-olah kamu mengajar anak usia 10 tahun.'
-      },
-      {
-        'title': 'Evaluasi',
-        'desc':
-            'Identifikasi bagian yang sulit, pelajari lagi, lalu sederhanakan bahasanya.'
-      },
+      {'title': 'Pilih Topik', 'desc': 'Tentukan konsep spesifik yang ingin kamu kuasai sepenuhnya.'},
+      {'title': 'Jelaskan', 'desc': 'Jelaskan materi tersebut seolah-olah kamu mengajar anak usia 10 tahun.'},
+      {'title': 'Evaluasi', 'desc': 'Identifikasi bagian yang sulit, pelajari lagi, lalu sederhanakan bahasanya.'},
     ],
   },
   'Blurting': {
@@ -307,20 +278,9 @@ const Map<String, Map<String, dynamic>> _methodData = {
     'stepColor': Color(0xFFFFF8E1),
     'stepTextColor': Color(0xFFE65100),
     'steps': [
-      {
-        'title': 'Baca',
-        'desc': 'Pelajari satu topik tertentu dalam durasi singkat.'
-      },
-      {
-        'title': 'Tulis',
-        'desc':
-            'Tutup buku dan tuliskan semua hal yang kamu ingat di kertas kosong tanpa melihat catatan.'
-      },
-      {
-        'title': 'Evaluasi',
-        'desc':
-            'Buka materi kembali, identifikasi poin yang kurang maupun salah.'
-      },
+      {'title': 'Baca', 'desc': 'Pelajari satu topik tertentu dalam durasi singkat.'},
+      {'title': 'Tulis', 'desc': 'Tutup buku dan tuliskan semua hal yang kamu ingat di kertas kosong tanpa melihat catatan.'},
+      {'title': 'Evaluasi', 'desc': 'Buka materi kembali, identifikasi poin yang kurang maupun salah.'},
     ],
   },
 };
