@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'notebook_page.dart';
-import 'statistics_page.dart';
 import 'profile_page.dart';
 import 'pomodoro_session_page.dart';
 

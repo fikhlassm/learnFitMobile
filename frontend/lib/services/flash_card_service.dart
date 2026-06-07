@@ -1,184 +1,152 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FlashcardService {
+static const String baseUrl =
+'http://127.0.0.1:8000/api/flashcards';
 
-  static const String baseUrl =
-      'http://10.0.2.2:8000/api/flashcards';
+static Future<Map<String, String>> _headers() async {
+final prefs = await SharedPreferences.getInstance();
 
-  static Future<List<dynamic>>
-      getFlashcards({
+final token =
+    prefs.getString('auth_token');
 
-    required String token,
+print(
+  'FLASHCARD TOKEN = $token',
+);
 
-    required int studySessionId,
+return {
+  'Accept': 'application/json',
+  'Content-Type':
+      'application/json',
+  'Authorization':
+      'Bearer ${token ?? ''}',
+};
 
-  }) async {
+}
 
-    final response = await http.get(
+static Future<List<dynamic>> getFlashcards({
+required int studySessionId,
+}) async {
+print(
+'FLASHCARD SESSION ID = $studySessionId',
+);
 
-      Uri.parse(
-        '$baseUrl?study_session_id=$studySessionId',
-      ),
+final response = await http.get(
+  Uri.parse(
+    '$baseUrl?study_session_id=$studySessionId',
+  ),
+  headers: await _headers(),
+);
 
-      headers: {
+print(
+  'FLASHCARD GET STATUS = ${response.statusCode}',
+);
 
-        'Accept': 'application/json',
+print(
+  'FLASHCARD GET BODY = ${response.body}',
+);
 
-        'Authorization':
-            'Bearer $token',
-      },
-    );
+if (response.statusCode == 200) {
+  final data =
+      jsonDecode(response.body);
 
-    print(response.statusCode);
-    print(response.body);
-
-    if (response.statusCode == 200) {
-
-      final data =
-          jsonDecode(response.body);
-
-      if (data is List) {
-        return data;
-      }
-
-      if (data['data'] != null) {
-        return data['data'];
-      }
-
-      return [];
-    }
-
-    throw Exception(
-      'Failed to load flashcards',
-    );
+  if (data is List) {
+    return data;
   }
 
-  static Future<void>
-      createFlashcard({
-
-    required String token,
-
-    required int studySessionId,
-
-    required String question,
-
-    required String answer,
-
-  }) async {
-
-    final response = await http.post(
-      Uri.parse(baseUrl),
-
-      headers: {
-
-        'Accept': 'application/json',
-
-        'Content-Type':
-            'application/json',
-
-        'Authorization':
-            'Bearer $token',
-      },
-
-      body: jsonEncode({
-
-        'study_session_id':
-            studySessionId,
-
-        'question': question,
-
-        'answer': answer,
-      }),
-    );
-
-    print(response.statusCode);
-    print(response.body);
-
-    if (response.statusCode != 200 &&
-        response.statusCode != 201) {
-
-      throw Exception(
-        'Failed to create flashcard',
-      );
-    }
+  if (data['data'] != null) {
+    return data['data'];
   }
 
-  static Future<void>
-      updateFlashcard({
+  return [];
+}
 
-    required String token,
+throw Exception(
+  'Failed to load flashcards',
+);
 
-    required int id,
+}
 
-    required String question,
+static Future<void> createFlashcard({
+required int studySessionId,
+required String question,
+required String answer,
+}) async {
+print(
+'CREATE FLASHCARD SESSION = $studySessionId',
+);
 
-    required String answer,
+final response = await http.post(
+  Uri.parse(baseUrl),
+  headers: await _headers(),
+  body: jsonEncode({
+    'study_session_id':
+        studySessionId,
+    'question': question,
+    'answer': answer,
+  }),
+);
 
-  }) async {
+print(
+  'CREATE STATUS = ${response.statusCode}',
+);
 
-    final response = await http.patch(
-      Uri.parse('$baseUrl/$id'),
+print(
+  'CREATE BODY = ${response.body}',
+);
 
-      headers: {
+if (response.statusCode != 200 &&
+    response.statusCode != 201) {
+  throw Exception(
+    'Failed to create flashcard',
+  );
+}
 
-        'Accept': 'application/json',
+}
 
-        'Content-Type':
-            'application/json',
+static Future<void> updateFlashcard({
+required int id,
+required String question,
+required String answer,
+}) async {
+final response = await http.patch(
+Uri.parse('$baseUrl/$id'),
+headers: await _headers(),
+body: jsonEncode({
+'question': question,
+'answer': answer,
+}),
+);
 
-        'Authorization':
-            'Bearer $token',
-      },
+print(response.statusCode);
+print(response.body);
 
-      body: jsonEncode({
+if (response.statusCode != 200) {
+  throw Exception(
+    'Failed to update flashcard',
+  );
+}
 
-        'question': question,
+}
 
-        'answer': answer,
-      }),
-    );
+static Future<void> deleteFlashcard({
+required int id,
+}) async {
+final response = await http.delete(
+Uri.parse('$baseUrl/$id'),
+headers: await _headers(),
+);
 
-    print(response.statusCode);
-    print(response.body);
+print(response.statusCode);
+print(response.body);
 
-    if (response.statusCode != 200) {
+if (response.statusCode != 200) {
+  throw Exception(
+    'Failed to delete flashcard',
+  );
+}
 
-      throw Exception(
-        'Failed to update flashcard',
-      );
-    }
-  }
-
-  static Future<void>
-      deleteFlashcard({
-
-    required String token,
-
-    required int id,
-
-  }) async {
-
-    final response = await http.delete(
-      Uri.parse('$baseUrl/$id'),
-
-      headers: {
-
-        'Accept': 'application/json',
-
-        'Authorization':
-            'Bearer $token',
-      },
-    );
-
-    print(response.statusCode);
-    print(response.body);
-
-    if (response.statusCode != 200) {
-
-      throw Exception(
-        'Failed to delete flashcard',
-      );
-    }
-  }
+}
 }

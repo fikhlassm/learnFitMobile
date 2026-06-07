@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Services/user_daily_stats_service.dart';
+import '../services/user_daily_stats_service.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
