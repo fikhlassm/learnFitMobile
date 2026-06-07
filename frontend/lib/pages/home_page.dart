@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notebook_page.dart';
+import 'statistics_page.dart';
 import 'profile_page.dart';
 import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
@@ -471,28 +472,14 @@ class _HomeContentState extends State<_HomeContent> {
     final int pct = (progress * 100).round();
 
     // Sisa waktu
-final int safeTarget = _targetMinutes > 0 ? _targetMinutes : 0;
-final int safeStudied = _studiedMinutes > 0 ? _studiedMinutes : 0;
-
-// Hitung sisa, pastikan tidak negatif
-final int remainingMin = (safeTarget - safeStudied).clamp(0, 99999);
-
-String remainingLabel;
-if (_targetMinutes == 0 || _targetMinutes == null) {
-  remainingLabel = 'Target belum diset';
-} else if (remainingMin <= 0) {
-  remainingLabel = 'Target tercapai! 🎉';
-} else {
-  // Konversi menit ke Jam & Menit dengan benar
-  final int hours = remainingMin ~/ 60; 
-  final int minutes = remainingMin % 60;
-  
-  if (hours > 0) {
-    remainingLabel = 'TERSISA ${hours}J ${minutes}M';
-  } else {
-    remainingLabel = 'TERSISA ${minutes}M';
-  }
-}
+    final int remainingMin = (_targetMinutes - _studiedMinutes).clamp(0, 99999);
+    final String remainingLabel = _targetMinutes == 0
+        ? 'Target belum diset'
+        : remainingMin == 0
+            ? 'Target tercapai! 🎉'
+            : remainingMin >= 60
+                ? 'TERSISA ${remainingMin ~/ 60}J ${remainingMin % 60}M'
+                : 'TERSISA ${remainingMin}M';
 
     // Label progress
     final String progressLabel = _targetMinutes == 0
@@ -598,6 +585,13 @@ if (_targetMinutes == 0 || _targetMinutes == null) {
         title: 'Pomodoro',
         subtitle: 'Bagi belajar ke dalam sesi fokus 25 menit diselingi istirahat singkat.',
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PomodoroSessionPage())),
+      ),
+      _TechniqueData(
+        icon: Icons.psychology_outlined,
+        color: const Color(0xFF4CAF50),
+        title: 'Active Recall',
+        subtitle: 'Uji pemahamanmu dengan menjawab pertanyaan dari memori tanpa melihat catatan.',
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActiveRecallSessionPage())),
       ),
       _TechniqueData(
         icon: Icons.edit_note_outlined,

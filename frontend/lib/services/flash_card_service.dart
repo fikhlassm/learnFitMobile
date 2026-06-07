@@ -3,150 +3,138 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FlashcardService {
-static const String baseUrl =
-'http://127.0.0.1:8000/api/flashcards';
+  // PERBAIKAN: Gunakan localhost untuk Web/iOS Simulator
+  // Ganti ke 'http://10.0.2.2:8000/api/flashcards' jika pakai Android Emulator
+  static const String baseUrl = 'http://localhost:8000/api/flashcards';
 
-static Future<Map<String, String>> _headers() async {
-final prefs = await SharedPreferences.getInstance();
+  /// Helper untuk mengambil headers dengan token otomatis
+  static Future<Map<String, String>> _headers() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    
+    // Debugging: Pastikan token tidak null
+    print('FLASHCARD TOKEN = $token'); 
 
-final token =
-    prefs.getString('auth_token');
-
-print(
-  'FLASHCARD TOKEN = $token',
-);
-
-return {
-  'Accept': 'application/json',
-  'Content-Type':
-      'application/json',
-  'Authorization':
-      'Bearer ${token ?? ''}',
-};
-
-}
-
-static Future<List<dynamic>> getFlashcards({
-required int studySessionId,
-}) async {
-print(
-'FLASHCARD SESSION ID = $studySessionId',
-);
-
-final response = await http.get(
-  Uri.parse(
-    '$baseUrl?study_session_id=$studySessionId',
-  ),
-  headers: await _headers(),
-);
-
-print(
-  'FLASHCARD GET STATUS = ${response.statusCode}',
-);
-
-print(
-  'FLASHCARD GET BODY = ${response.body}',
-);
-
-if (response.statusCode == 200) {
-  final data =
-      jsonDecode(response.body);
-
-  if (data is List) {
-    return data;
+    return {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${token ?? ''}',
+    };
   }
 
-  if (data['data'] != null) {
-    return data['data'];
+  /// METHOD BARU: Fetch Total Flashcards
+  static Future<int> getTotalFlashcards() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/total'),
+        headers: await _headers(), // Menggunakan helper headers
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Mengambil nilai dari struktur { "data": { "total": 2 } }
+        // Safe access: cek apakah data['data'] ada sebelum akses ['total']
+        final total = data['data']?['total'];
+        return (total is int) ? total : 0;
+      } else {
+        // Jika 403 atau error lain, print body untuk debugging
+        print('ERROR GET TOTAL BODY: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching total flashcards: $e');
+    }
+    return 0;
   }
 
-  return [];
-}
+  static Future<List<dynamic>> getFlashcards({
+    required int studySessionId,
+  }) async {
+    print('FLASHCARD SESSION ID = $studySessionId');
 
-throw Exception(
-  'Failed to load flashcards',
-);
+    final response = await http.get(
+      Uri.parse('$baseUrl?study_session_id=$studySessionId'),
+      headers: await _headers(),
+    );
 
-}
+    print('FLASHCARD GET STATUS = ${response.statusCode}');
+    print('FLASHCARD GET BODY = ${response.body}');
 
-static Future<void> createFlashcard({
-required int studySessionId,
-required String question,
-required String answer,
-}) async {
-print(
-'CREATE FLASHCARD SESSION = $studySessionId',
-);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-final response = await http.post(
-  Uri.parse(baseUrl),
-  headers: await _headers(),
-  body: jsonEncode({
-    'study_session_id':
-        studySessionId,
-    'question': question,
-    'answer': answer,
-  }),
-);
+      if (data is List) {
+        return data;
+      }
 
-print(
-  'CREATE STATUS = ${response.statusCode}',
-);
+      if (data['data'] != null) {
+        return data['data'];
+      }
 
-print(
-  'CREATE BODY = ${response.body}',
-);
+      return [];
+    }
+    throw Exception('Failed to load flashcards');
+  }
 
-if (response.statusCode != 200 &&
-    response.statusCode != 201) {
-  throw Exception(
-    'Failed to create flashcard',
-  );
-}
+  static Future<void> createFlashcard({
+    required int studySessionId,
+    required String question,
+    required String answer,
+  }) async {
+    print('CREATE FLASHCARD SESSION = $studySessionId');
 
-}
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: await _headers(),
+      body: jsonEncode({
+        'study_session_id': studySessionId,
+        'question': question,
+        'answer': answer,
+      }),
+    );
 
-static Future<void> updateFlashcard({
-required int id,
-required String question,
-required String answer,
-}) async {
-final response = await http.patch(
-Uri.parse('$baseUrl/$id'),
-headers: await _headers(),
-body: jsonEncode({
-'question': question,
-'answer': answer,
-}),
-);
+    print('CREATE STATUS = ${response.statusCode}');
+    print('CREATE BODY = ${response.body}');
 
-print(response.statusCode);
-print(response.body);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to create flashcard');
+    }
+  }
 
-if (response.statusCode != 200) {
-  throw Exception(
-    'Failed to update flashcard',
-  );
-}
+  static Future<void> updateFlashcard({
+    required int id,
+    required String question,
+    required String answer,
+  }) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/$id'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'question': question,
+        'answer': answer,
+      }),
+    );
 
-}
+    print('UPDATE STATUS = ${response.statusCode}');
+    print('UPDATE BODY = ${response.body}');
 
-static Future<void> deleteFlashcard({
-required int id,
-}) async {
-final response = await http.delete(
-Uri.parse('$baseUrl/$id'),
-headers: await _headers(),
-);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update flashcard');
+    }
+  }
 
-print(response.statusCode);
-print(response.body);
+  static Future<void> deleteFlashcard({
+    required int id,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$id'),
+      headers: await _headers(),
+    );
 
-if (response.statusCode != 200) {
-  throw Exception(
-    'Failed to delete flashcard',
-  );
-}
+    print('DELETE STATUS = ${response.statusCode}');
+    print('DELETE BODY = ${response.body}');
 
-}
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete flashcard');
+    }
+  }
 }

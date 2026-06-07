@@ -92,7 +92,7 @@ class _NewNoteSheetState extends State<NewNoteSheet> {
       case 'Pomodoro':
         return PomodoroSessionPage(topicTitle: title);
       case 'Active Recall':
-        return ActiveRecallSessionPage(topicTitle: title, token: "",);
+        return ActiveRecallSessionPage(topicTitle: title, studySessionId: );
       case 'Feynman Technique':
         return FeynmanSessionPage(topicTitle: title);
       case 'Blurting':
