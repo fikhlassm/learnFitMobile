@@ -13,7 +13,7 @@ class FlashcardController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:modify,flashcard', except: ['store', 'index']),
+            new Middleware('can:modify,flashcard', except: ['store', 'index', 'total']),
         ];
     }
 
@@ -81,6 +81,19 @@ class FlashcardController extends Controller implements HasMiddleware
 
         return response()->json([
             'message' => 'Successfully deleted flashcard',
+        ], 200);
+    }
+
+    public function total(Request $request)
+    {
+        $count = Flashcard::query()
+            ->whereHas('studySession', fn($q) => $q->where('user_id', $request->user()->id))
+            ->count();
+
+        return response()->json([
+            'data' => [
+                'total' => $count,
+            ],
         ], 200);
     }
 }
