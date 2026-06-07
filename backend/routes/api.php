@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('quiz-results', QuizResultController::class)->only(['index', 'store', 'show']);
     Route::apiResource('study-sessions', StudySessionController::class);
+    Route::get('/flashcards/total', [FlashcardController::class, 'total']);
     Route::apiResource('flashcards', FlashcardController::class);
     Route::apiSingleton('profile', ProfileController::class)->destroyable();
     Route::apiResource('session-logs', SessionLogController::class)->only(['index', 'store', 'show', 'destroy']);
