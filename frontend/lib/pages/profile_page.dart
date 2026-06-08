@@ -5,7 +5,6 @@ import '../services/auth_service.dart';       // Tetap butuh untuk Logout
 import '../pages/login_page.dart';
 import 'personal_information_page.dart';
 import 'study_reminders_page.dart';
-import 'privacy_security_page.dart';
 import 'support_center.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -247,18 +246,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const StudyRemindersPage(),
-                  ),
-                ),
-              ),
-              _divider(),
-              _settingsItem(
-                context,
-                icon: Icons.shield_outlined,
-                label: 'Privacy & Security',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PrivacySecurityPage(),
                   ),
                 ),
               ),

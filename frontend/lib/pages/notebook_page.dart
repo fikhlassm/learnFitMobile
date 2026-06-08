@@ -17,6 +17,9 @@ class NotebookPage extends StatefulWidget {
 class _NotebookPageState extends State<NotebookPage> {
   List<dynamic> _notes = [];
 
+  // ─── Target sesi per minggu (ubah sesuai kebutuhan) ───
+  static const int _weeklyTarget = 10;
+
   @override
   void initState() {
     super.initState();
@@ -24,22 +27,16 @@ class _NotebookPageState extends State<NotebookPage> {
   }
 
   Future<void> _loadStudySessions() async {
-  try {
-    final data =
-        await StudySessionService
-            .getStudySessions();
-
-    print(
-      'STUDY SESSION API = $data',
-    );
-
-    setState(() {
-      _notes = data;
-    });
-  } catch (e) {
-    print(e);
+    try {
+      final data = await StudySessionService.getStudySessions();
+      print('STUDY SESSION API = $data');
+      setState(() {
+        _notes = data;
+      });
+    } catch (e) {
+      print(e);
+    }
   }
-}
 
   String _getMethodName(int id) {
     switch (id) {
@@ -81,41 +78,51 @@ class _NotebookPageState extends State<NotebookPage> {
     }
   }
 
-  // ← DIUBAH: terima note map langsung, ambil id dan method dari sana
-  Widget _sessionPageFor(
-  Map<String, dynamic> note,
-) {
+  // ─── Computed: total sesi ───
+  int get _totalSessions => _notes.length;
 
-  print(
-    'NOTE CLICKED = $note',
-  );
+  // ─── Computed: distribusi metode { nama: jumlah } ───
+  Map<String, int> get _methodCounts {
+    final counts = <String, int>{};
+    for (final note in _notes) {
+      final id = (note['study_technique_id'] ?? 0) as int;
+      final method = _getMethodName(id);
+      counts[method] = (counts[method] ?? 0) + 1;
+    }
+    return counts;
+  }
 
-  final method =
-      note['method'].toString();
+  // ─── Computed: id metode terbanyak ───
+  int get _topMethodId {
+    if (_notes.isEmpty) return 0;
+    final counts = <int, int>{};
+    for (final note in _notes) {
+      final id = (note['study_technique_id'] ?? 0) as int;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+  }
 
-  final title =
-      note['title'].toString();
+  // ─── Computed: nama metode terbanyak ───
+  String get _topMethodName => _getMethodName(_topMethodId);
 
-  final sessionId =
-      int.tryParse(
-        note['id'].toString(),
-      ) ??
-      0;
+  Widget _sessionPageFor(Map<String, dynamic> note) {
+    print('NOTE CLICKED = $note');
+    final method = note['method'].toString();
+    final title = note['title'].toString();
+    final sessionId = int.tryParse(note['id'].toString()) ?? 0;
+    print('SESSION ID SENT = $sessionId');
 
-  print(
-    'SESSION ID SENT = $sessionId',
-  );
-
-  switch (method) {
+    switch (method) {
       case 'Pomodoro':
         return PomodoroSessionPage(
-  topicTitle: title,
-  studySessionId: sessionId,
-);
+          topicTitle: title,
+          studySessionId: sessionId,
+        );
       case 'Active Recall':
         return ActiveRecallSessionPage(
           topicTitle: title,
-          studySessionId: sessionId, // ← DIUBAH: pass session id
+          studySessionId: sessionId,
         );
       case 'Feynman Technique':
         return FeynmanSessionPage(topicTitle: title);
@@ -136,7 +143,11 @@ class _NotebookPageState extends State<NotebookPage> {
             const SizedBox(height: 16),
             const Text(
               'Notebook',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -152,7 +163,11 @@ class _NotebookPageState extends State<NotebookPage> {
                           children: [
                             const Text(
                               'Riwayat Catatan',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {},
@@ -160,10 +175,18 @@ class _NotebookPageState extends State<NotebookPage> {
                                 children: [
                                   Text(
                                     'Filter',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF2196F3)),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF2196F3),
+                                    ),
                                   ),
                                   SizedBox(width: 4),
-                                  Icon(Icons.filter_alt_outlined, size: 16, color: Color(0xFF2196F3)),
+                                  Icon(
+                                    Icons.filter_alt_outlined,
+                                    size: 16,
+                                    color: Color(0xFF2196F3),
+                                  ),
                                 ],
                               ),
                             ),
@@ -171,8 +194,7 @@ class _NotebookPageState extends State<NotebookPage> {
                         ),
                         const SizedBox(height: 12),
                         ..._notes.map((note) {
-                          final techniqueId = note['study_technique_id'] ?? 0;
-                          // ← DIUBAH: sertakan 'id' dari API ke map
+                          final techniqueId = (note['study_technique_id'] ?? 0) as int;
                           return _buildNoteCard(
                             context,
                             {
@@ -195,36 +217,31 @@ class _NotebookPageState extends State<NotebookPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-  onPressed: () async {
-
-    final result =
-        await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            const NewNoteSheet(),
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NewNoteSheet()),
+          );
+          if (result == true) {
+            await _loadStudySessions();
+          }
+        },
+        backgroundColor: const Color(0xFF2196F3),
+        shape: const CircleBorder(),
+        elevation: 3,
+        child: const Icon(Icons.add, color: Colors.white, size: 26),
       ),
     );
-
-    if (result == true) {
-      await _loadStudySessions();
-    }
-  },
-  backgroundColor:
-      const Color(0xFF2196F3),
-  shape: const CircleBorder(),
-  elevation: 3,
-  child: const Icon(
-    Icons.add,
-    color: Colors.white,
-    size: 26,
-  ),
-),
-
-);
   }
 
+  // ─── Summary Card (dinamis dari _notes) ───
   Widget _buildSummaryCard() {
+    final total = _totalSessions;
+    final counts = _methodCounts;
+    final double progress = (total / _weeklyTarget).clamp(0.0, 1.0);
+    final int progressPercent = (progress * 100).round();
+    final topIcon = _getMethodIcon(_topMethodId);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -239,12 +256,17 @@ class _NotebookPageState extends State<NotebookPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Header ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Ringkasan Belajar Mingguan',
-                style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -252,48 +274,118 @@ class _NotebookPageState extends State<NotebookPage> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.trending_up, color: Colors.white, size: 14),
-                    SizedBox(width: 3),
-                    Text('+15%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                    const Icon(Icons.trending_up, color: Colors.white, size: 14),
+                    const SizedBox(width: 3),
+                    Text(
+                      '$progressPercent%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
+
+          // ── Total sesi ──
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
-                '12.5',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white, height: 1),
+              Text(
+                '$total',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1,
+                ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               const Padding(
                 padding: EdgeInsets.only(bottom: 4),
-                child: Text('jam', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white70)),
+                child: Text(
+                  'sesi',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
               ),
               const Spacer(),
-              const Text(
-                'Target:\n15j',
-                style: TextStyle(fontSize: 12, color: Colors.white60, height: 1.4),
+              Text(
+                'Target:\n${_weeklyTarget}s',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white60,
+                  height: 1.4,
+                ),
                 textAlign: TextAlign.right,
               ),
             ],
           ),
           const SizedBox(height: 10),
+
+          // ── Progress bar ──
           ClipRRect(
             borderRadius: BorderRadius.circular(100),
             child: LinearProgressIndicator(
-              value: 12.5 / 15,
+              value: progress,
               minHeight: 5,
               backgroundColor: Colors.white.withOpacity(0.25),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
           const SizedBox(height: 14),
+
+          // ── Metode favorit ──
+          if (total > 0) ...[
+            Row(
+              children: [
+                Icon(topIcon, size: 14, color: Colors.white70),
+                const SizedBox(width: 6),
+                Text(
+                  'Metode favorit: $_topMethodName',
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // ── Chips distribusi semua metode ──
+          if (counts.isNotEmpty) ...[
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: counts.entries.map((e) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${e.key}: ${e.value}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
+          ],
+
+          // ── Tombol statistik detail ──
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -301,7 +393,9 @@ class _NotebookPageState extends State<NotebookPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF2196F3),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
@@ -322,7 +416,6 @@ class _NotebookPageState extends State<NotebookPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            // ← DIUBAH: pass note map lengkap (termasuk 'id') ke _sessionPageFor
             builder: (_) => _sessionPageFor(note),
           ),
         );
@@ -334,7 +427,11 @@ class _NotebookPageState extends State<NotebookPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
@@ -347,17 +444,28 @@ class _NotebookPageState extends State<NotebookPage> {
                 Expanded(
                   child: Text(
                     note['title'] as String,
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: Colors.black87),
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(note['date'] as String, style: const TextStyle(fontSize: 11.5, color: Color(0xFFAAAAAA))),
+                Text(
+                  note['date'] as String,
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFFAAAAAA)),
+                ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
               note['preview'] as String,
-              style: const TextStyle(fontSize: 12.5, color: Color(0xFF999999), height: 1.4),
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: Color(0xFF999999),
+                height: 1.4,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -371,11 +479,19 @@ class _NotebookPageState extends State<NotebookPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(note['methodIcon'] as IconData, size: 13, color: note['methodColor'] as Color),
+                  Icon(
+                    note['methodIcon'] as IconData,
+                    size: 13,
+                    color: note['methodColor'] as Color,
+                  ),
                   const SizedBox(width: 5),
                   Text(
                     note['method'] as String,
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: note['methodColor'] as Color),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: note['methodColor'] as Color,
+                    ),
                   ),
                 ],
               ),
@@ -391,7 +507,11 @@ class _NotebookPageState extends State<NotebookPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
         ],
       ),
       child: SafeArea(
@@ -416,7 +536,11 @@ class _NotebookPageState extends State<NotebookPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 24, color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
+        Icon(
+          icon,
+          size: 24,
+          color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
+        ),
         const SizedBox(height: 3),
         Text(
           label,

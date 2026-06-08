@@ -1,53 +1,30 @@
 import 'package:flutter/material.dart';
-import 'feynman_session_page.dart';
-import 'pomodoro_session_page.dart';
-import 'active_recall_session_page.dart';
-import 'blurting_session_page.dart';
+// Pastikan import ini mengarah ke file home_page.dart kamu
+import 'home_page.dart'; 
 
 class QuizResultPage extends StatelessWidget {
   final String method;
-  final String topicTitle;
-  final int studySessionId; // ← TAMBAH INI
+  final int quizResultId;
+  final List<int> scores; // [pomodoro, activeRecall, feynman, blurting]
 
   const QuizResultPage({
     super.key,
     required this.method,
-    required this.studySessionId, // ← TAMBAH INI
-    this.topicTitle = '',
+    required this.scores,
+    this.quizResultId = 0,
   });
-
-  void _navigateToSession(BuildContext context) {
-    final topic =
-        topicTitle.isNotEmpty ? topicTitle : _defaultTopic[method] ?? 'Materi';
-
-    final Widget page;
-    if (method == 'Pomodoro') {
-      page = PomodoroSessionPage(
-  topicTitle: topic,
-  studySessionId: studySessionId,
-);
-    } else if (method == 'Active Recall') {
-      page = ActiveRecallSessionPage(
-        topicTitle: topic,
-        studySessionId: studySessionId, // ← TAMBAH INI
-      );
-    } else if (method == 'Feynman Technique') {
-      page = FeynmanSessionPage(topicTitle: topic);
-    } else if (method == 'Blurting') {
-      page = BlurtingSessionPage(topicTitle: topic);
-    } else {
-      page = PomodoroSessionPage(
-  topicTitle: topic,
-  studySessionId: studySessionId,
-);
-    }
-
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-  }
 
   @override
   Widget build(BuildContext context) {
     final data = _methodData[method] ?? _methodData['Pomodoro']!;
+    final totalScore = scores.fold(0, (sum, s) => sum + s);
+
+    final scoreBreakdown = [
+      {'label': 'Pomodoro', 'score': scores[0], 'color': const Color(0xFF2196F3)},
+      {'label': 'Active Recall', 'score': scores[1], 'color': const Color(0xFF2E7D32)},
+      {'label': 'Feynman Technique', 'score': scores[2], 'color': const Color(0xFFD32F2F)},
+      {'label': 'Blurting', 'score': scores[3], 'color': const Color(0xFFE65100)},
+    ];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -55,81 +32,168 @@ class QuizResultPage extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-
             const Text(
               'Metode Belajar',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
             ),
-
             const SizedBox(height: 20),
 
+            // ── Banner metode ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
                 width: double.infinity,
-                height: 180,
+                height: 160,
                 decoration: BoxDecoration(
                   color: data['bgColor'] as Color,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Icon(data['icon'] as IconData, color: data['iconColor'] as Color, size: 36),
+                      ),
                     ),
-                    child: Icon(
-                      data['icon'] as IconData,
-                      color: data['iconColor'] as Color,
-                      size: 36,
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          '✦ Rekomendasimu',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 20),
             Text(
               method,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.black87),
             ),
-
-            const SizedBox(height: 20),
+            const SizedBox(height: 4),
+            Text(
+              'Berdasarkan hasil quizmu',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 16),
 
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
-                  children: List.generate(
-                    (data['steps'] as List).length,
-                    (index) {
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Skor Breakdown ──
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8F9FC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEEEFF3), width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Skor Kesesuaian',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black87),
+                          ),
+                          const SizedBox(height: 12),
+                          ...scoreBreakdown.map((item) {
+                            final score = item['score'] as int;
+                            final color = item['color'] as Color;
+                            final label = item['label'] as String;
+                            final isWinner = label == method;
+                            final pct = totalScore > 0 ? score / totalScore : 0.0;
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      if (isWinner)
+                                        Padding(
+                                          padding: const EdgeInsets.only(right: 4),
+                                          child: Icon(Icons.star_rounded, size: 14, color: color),
+                                        ),
+                                      Expanded(
+                                        child: Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: isWinner ? FontWeight.w700 : FontWeight.w400,
+                                            color: isWinner ? color : Colors.black54,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '$score poin',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isWinner ? FontWeight.w700 : FontWeight.w400,
+                                          color: isWinner ? color : Colors.black38,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 5),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(100),
+                                    child: LinearProgressIndicator(
+                                      value: pct,
+                                      minHeight: 5,
+                                      backgroundColor: Colors.grey.shade200,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        isWinner ? color : color.withOpacity(0.35),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ── Langkah-langkah metode ──
+                    const Text(
+                      'Cara Kerjanya',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 10),
+
+                    ...List.generate((data['steps'] as List).length, (index) {
                       final step = (data['steps'] as List)[index];
                       final stepColor = data['stepColor'] as Color;
                       final stepTextColor = data['stepTextColor'] as Color;
 
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: 10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.grey.shade100,
-                              width: 1,
-                            ),
+                            border: Border.all(color: Colors.grey.shade100, width: 1),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.04),
@@ -150,7 +214,7 @@ class QuizResultPage extends StatelessWidget {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    '0${index + 1}',
+                                    '${index + 1}',
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
@@ -188,24 +252,34 @@ class QuizResultPage extends StatelessWidget {
                           ),
                         ),
                       );
-                    },
-                  ),
+                    }),
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
             ),
 
+            // ── CTA → Navigasi Langsung ke HomePage Class ──
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
               child: SizedBox(
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () => _navigateToSession(context),
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      // PERBAIKAN: Arahkan langsung ke class HomePage
+                      // initialIndex: 1 agar langsung membuka tab Notebook
+                      MaterialPageRoute(
+                        builder: (_) => const HomePage(initialIndex: 1),
+                      ),
+                      (route) => false, // Hapus semua halaman sebelumnya dari stack
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     elevation: 0,
                   ),
                   child: const Row(
@@ -213,11 +287,7 @@ class QuizResultPage extends StatelessWidget {
                     children: [
                       Text(
                         'Mulai Belajar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                       ),
                       SizedBox(width: 6),
                       Icon(Icons.arrow_forward, color: Colors.white, size: 18),
@@ -233,13 +303,7 @@ class QuizResultPage extends StatelessWidget {
   }
 }
 
-const Map<String, String> _defaultTopic = {
-  'Pomodoro': 'Fungsi Eksponensial',
-  'Active Recall': 'Rumus Fisika Semester 2',
-  'Feynman Technique': 'Sejarah Majapahit',
-  'Blurting': 'Struktur Sel',
-};
-
+// ─── Constants ───────────────────────────────────────────────────────────────
 const Map<String, Map<String, dynamic>> _methodData = {
   'Pomodoro': {
     'bgColor': Color(0xFFDEEBFB),
