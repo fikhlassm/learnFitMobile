@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../Services/session_log_service.dart';
+import '../services/session_log_service.dart';
 import '../services/study_session_service.dart';
 import 'notebook_page.dart';
 
