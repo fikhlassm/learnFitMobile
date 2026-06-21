@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'quiz_page.dart';
 import 'home_page.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -117,11 +116,7 @@ class WelcomePage extends StatelessWidget {
                   // Card — tappable
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const QuizPage()),
-                      );
+                      Navigator.pushNamed(context, '/quiz');
                     },
                     child: Container(
                       width: double.infinity,

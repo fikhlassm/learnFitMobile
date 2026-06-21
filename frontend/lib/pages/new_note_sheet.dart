@@ -3,7 +3,6 @@ import 'feynman_session_page.dart';
 import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
-import 'quiz_page.dart';
 import '../services/study_session_service.dart';
 
 // ── Data model tiap metode ──
@@ -315,7 +314,7 @@ if (result == true && mounted) {
               GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const QuizPage()));
+                  Navigator.pushNamed(context, '/quiz');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

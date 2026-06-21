@@ -6,6 +6,8 @@ import 'pages/registration_page.dart';
 import 'pages/verification_page.dart';
 import 'pages/welcome_page.dart';
 import 'pages/forgot_password_page.dart';
+import 'pages/quiz_page.dart';
+import 'pages/quiz_result_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -44,6 +46,15 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const WelcomePage());
           case '/forgot-password':
             return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
+          case '/quiz':
+            return MaterialPageRoute(builder: (_) => const QuizPage());
+          case '/quiz-result':
+            final args = settings.arguments as Map<String, dynamic>?;
+            final method = args?['method'] as String? ?? 'Pomodoro';
+            final scores = (args?['scores'] as List?)?.cast<int>() ?? [0, 0, 0, 0];
+            return MaterialPageRoute(
+              builder: (_) => QuizResultPage(method: method, scores: scores),
+            );
           default:
             return MaterialPageRoute(builder: (_) => const IntroPage1());
         }

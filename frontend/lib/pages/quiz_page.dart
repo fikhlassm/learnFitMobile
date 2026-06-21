@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/quiz_result_service.dart';
-import 'quiz_result_page.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -239,29 +238,16 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       final techniqueId = _determineTechniqueId();
 
       try {
-        // POST ke /api/quiz-results
-        final quizResultResponse = await QuizResultService.store(
-          studyTechniqueId:  techniqueId,
-          pomodoroScore:     _scores[0],
-          activeRecallScore: _scores[1],
-          feynmanScore:      _scores[2],
-          blurtingScore:     _scores[3],
+        await QuizResultService.store(
+          studyTechniqueId: techniqueId,
         );
-        final quizResultId = quizResultResponse.isSuccess
-            ? quizResultResponse.data!.id
-            : 0;
 
         if (!mounted) return;
 
-        Navigator.pushReplacement(
+        Navigator.pushReplacementNamed(
           context,
-          MaterialPageRoute(
-            builder: (_) => QuizResultPage(
-              method:        result,
-              quizResultId:  quizResultId,
-              scores:        List<int>.from(_scores),
-            ),
-          ),
+          '/quiz-result',
+          arguments: {'method': result, 'scores': _scores},
         );
       } catch (e) {
         if (!mounted) return;

@@ -4,14 +4,12 @@ import 'home_page.dart';
 
 class QuizResultPage extends StatelessWidget {
   final String method;
-  final int quizResultId;
   final List<int> scores; // [pomodoro, activeRecall, feynman, blurting]
 
   const QuizResultPage({
     super.key,
     required this.method,
     required this.scores,
-    this.quizResultId = 0,
   });
 
   @override
