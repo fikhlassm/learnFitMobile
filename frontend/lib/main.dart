@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'pages/intro_page1.dart';
 import 'pages/intro_page2.dart';
-import 'pages/login_page.dart';   // ← pastikan ini ada
+import 'pages/login_page.dart';
+import 'pages/registration_page.dart';
+import 'pages/verification_page.dart';
+import 'pages/welcome_page.dart';
+import 'pages/forgot_password_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,8 +31,19 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const IntroPage1());
           case '/intro2':
             return MaterialPageRoute(builder: (_) => const IntroPage2());
-          case '/login':                                              // ← baru
-            return MaterialPageRoute(builder: (_) => const LoginPage()); // ← baru
+          case '/login':
+            return MaterialPageRoute(builder: (_) => const LoginPage());
+          case '/register':
+            return MaterialPageRoute(builder: (_) => const RegistrationPage());
+          case '/verify':
+            final email = settings.arguments as String? ?? '';
+            return MaterialPageRoute(
+              builder: (_) => VerificationPage(email: email),
+            );
+          case '/welcome':
+            return MaterialPageRoute(builder: (_) => const WelcomePage());
+          case '/forgot-password':
+            return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
           default:
             return MaterialPageRoute(builder: (_) => const IntroPage1());
         }

@@ -17,11 +17,11 @@ class IntroPage1 extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Intro Page 1',
+                    'LearnFit',
                     style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/intro2'),
+                    onPressed: () => Navigator.pushNamed(context, '/login'),
                     child: const Text(
                       'Skip',
                       style: TextStyle(
@@ -93,7 +93,7 @@ class IntroPage1 extends StatelessWidget {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pushNamed(context, '/intro2'),
+                    onPressed: () => Navigator.pushNamed(context, '/login'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2196F3),
                           shape: RoundedRectangleBorder(

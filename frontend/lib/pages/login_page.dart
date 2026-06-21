@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'registration_page.dart';
-import 'welcome_page.dart';
+import 'home_page.dart';
 import '../services/auth_service.dart';
-import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -48,10 +46,9 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('Login berhasil!')),
       );
       
-      // Navigasi ke WelcomePage (ganti sesuai flow-mu)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const WelcomePage()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } else {
       // ❌ Login gagal - tampilkan error
@@ -238,10 +235,7 @@ Align(
   alignment: Alignment.centerRight,
   child: TextButton(
     onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-      );
+      Navigator.pushNamed(context, '/forgot-password');
     },
     style: TextButton.styleFrom(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -307,11 +301,7 @@ SizedBox(
                 ),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const RegistrationPage()),
-                    );
+                    Navigator.pushNamed(context, '/register');
                   },
                   child: const Text(
                     'Daftar Sekarang',

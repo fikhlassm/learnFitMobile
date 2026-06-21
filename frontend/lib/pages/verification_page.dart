@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/auth_service.dart'; 
-import 'welcome_page.dart';
+import '../services/auth_service.dart';
 
 class VerificationPage extends StatefulWidget {
   final String email;
@@ -17,7 +16,7 @@ class _VerificationPageState extends State<VerificationPage> {
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
-  int _secondsRemaining = 119; // 01:59
+  int _secondsRemaining = 180; // 03:00
   Timer? _timer;
   bool _canResend = false;
   bool _isLoading = false;
@@ -32,7 +31,7 @@ class _VerificationPageState extends State<VerificationPage> {
 
   void _startTimer() {
     _canResend = false;
-    _secondsRemaining = 119;
+    _secondsRemaining = 180;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining == 0) {
@@ -87,10 +86,7 @@ class _VerificationPageState extends State<VerificationPage> {
         _showSnackBar('Verifikasi berhasil!', isSuccess: true);
         
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const WelcomePage()),
-          );
+          Navigator.pushReplacementNamed(context, '/welcome');
         }
       } else {
         _showSnackBar(result['message'] ?? 'Kode OTP salah atau kedaluwarsa.');
