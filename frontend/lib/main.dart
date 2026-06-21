@@ -88,6 +88,7 @@ class MyApp extends StatelessWidget {
             final a = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
               builder: (_) => FeynmanSessionPage(
+                studySessionId: a?['studySessionId'] as int? ?? 0,
                 topicTitle: a?['topicTitle'] as String? ?? 'Sejarah Majapahit',
               ),
             );
@@ -95,6 +96,7 @@ class MyApp extends StatelessWidget {
             final a = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
               builder: (_) => BlurtingSessionPage(
+                studySessionId: a?['studySessionId'] as int? ?? 0,
                 topicTitle: a?['topicTitle'] as String? ?? 'Struktur Sel',
               ),
             );

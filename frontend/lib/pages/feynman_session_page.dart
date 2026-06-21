@@ -1,11 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'notebook_page.dart';
+import 'package:file_picker/file_picker.dart';
+import '../services/attachment_service.dart';
+import '../services/evaluation_service.dart';
+import '../services/session_log_service.dart';
+import '../services/study_session_service.dart';
 
 class FeynmanSessionPage extends StatefulWidget {
+  final int studySessionId;
   final String topicTitle;
 
   const FeynmanSessionPage({
     super.key,
+    required this.studySessionId,
     this.topicTitle = 'Sejarah Majapahit',
   });
 
@@ -14,40 +21,149 @@ class FeynmanSessionPage extends StatefulWidget {
 }
 
 class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
+  late final TextEditingController _titleController;
   final TextEditingController _notesController = TextEditingController();
   bool _showResponse = false;
   bool _isLoading = false;
   String _responseText = '';
+  File? _attachedFile;
+  String? _attachedFileName;
+  DateTime? _sessionStartedAt;
 
-  static const List<String> _sampleResponses = [
-    'Pemahamanmu sudah cukup baik! Kamu berhasil menjelaskan konsep utama dengan bahasa yang sederhana. Namun, ada beberapa poin yang bisa diperdalam:\n\n• Coba jelaskan lebih detail tentang sistem pemerintahan Majapahit\n• Hubungkan peran Gajah Mada dengan ekspansi wilayah\n• Tambahkan konteks tentang kejatuhan kerajaan\n\nSecara keseluruhan, pemahaman dasarmu sudah solid. Perkuat dengan detail spesifik!',
-    'Penjelasanmu menunjukkan pemahaman yang kuat terhadap materi ini. Kamu mampu menyederhanakan konsep kompleks dengan baik.\n\nBeberapa saran untuk penguatan:\n• Tambahkan contoh konkret untuk mendukung penjelasanmu\n• Perhatikan urutan kronologis peristiwa\n• Coba hubungkan dengan konteks yang lebih luas\n\nTerus latih kemampuan ini — kamu sudah di jalur yang benar!',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.topicTitle);
+    _loadSessionData();
+  }
 
-  void _cekPemahaman() async {
+  Future<void> _loadSessionData() async {
+    if (widget.studySessionId == 0) return;
+    try {
+      final session = await StudySessionService.getStudySession(
+        widget.studySessionId,
+      );
+      final data = session['data'] ?? session;
+      setState(() {
+        _notesController.text = data['content'] ?? '';
+      });
+      if (mounted) _sessionStartedAt = DateTime.now();
+    } catch (_) {}
+  }
+
+  void _saveTitle() {
+    if (widget.studySessionId == 0) return;
+    final newTitle = _titleController.text.trim();
+    if (newTitle.isNotEmpty && newTitle != widget.topicTitle) {
+      StudySessionService.updateStudySession(
+        id: widget.studySessionId,
+        topic: newTitle,
+      );
+    }
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['txt', 'md', 'pdf'],
+    );
+    if (result == null || result.files.single.path == null) return;
+
+    final file = File(result.files.single.path!);
+    final size = await file.length();
+    if (size > 51200 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ukuran file maksimal 50 MB')),
+      );
+      return;
+    }
+    setState(() {
+      _attachedFile = file;
+      _attachedFileName = result.files.single.name;
+    });
+  }
+
+  Future<void> _cekPemahaman() async {
     if (_notesController.text.trim().isEmpty) return;
+
+    if (_attachedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Dokumen sumber wajib dilampirkan terlebih dahulu'),
+        ),
+      );
+      return;
+    }
+
+    if (widget.studySessionId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sesi tidak valid')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _showResponse = false;
     });
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _isLoading = false;
-      _showResponse = true;
-      _responseText =
-          _sampleResponses[DateTime.now().second % _sampleResponses.length];
-    });
+
+    try {
+      await AttachmentService.upload(
+        studySessionId: widget.studySessionId,
+        file: _attachedFile!,
+      );
+
+      final feedback = await EvaluationService.evaluate(
+        studySessionId: widget.studySessionId,
+        text: _notesController.text,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _showResponse = true;
+        _responseText = feedback;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    }
   }
 
-  void _selesaikanSesi() {
-    Navigator.pop(
-  context,
-  true,
-);
+  Future<void> _selesaikanSesi() async {
+    if (_isLoading) return;
+    await StudySessionService.updateStudySession(
+      id: widget.studySessionId,
+      content: _notesController.text,
+    );
+
+    final seconds = _sessionStartedAt == null
+        ? 1
+        : DateTime.now().difference(_sessionStartedAt!).inSeconds.clamp(1, 86400);
+
+    try {
+      await SessionLogService.createSessionLog(
+        studySessionId: widget.studySessionId,
+        durationSeconds: seconds,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan catatan waktu')),
+      );
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
   }
 
   @override
   void dispose() {
+    _titleController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -96,14 +212,20 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              widget.topicTitle,
+            child: TextField(
+              controller: _titleController,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: Colors.black87,
               ),
-              textAlign: TextAlign.center,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onSubmitted: (_) => _saveTitle(),
             ),
           ),
           const SizedBox(width: 8),
@@ -210,31 +332,47 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
 
   Widget _buildAddFileButton() {
     return GestureDetector(
-      onTap: () {},
+      onTap: _pickFile,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE8E8E8)),
+          border: Border.all(
+            color: _attachedFile != null
+                ? const Color(0xFF4CAF50)
+                : const Color(0xFFE8E8E8),
+          ),
         ),
         child: Row(
           children: [
+            Icon(
+              _attachedFile != null ? Icons.attach_file : Icons.add,
+              size: 18,
+              color: _attachedFile != null
+                  ? const Color(0xFF4CAF50)
+                  : const Color(0xFF999999),
+            ),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Tambahkan file materi ...',
-                style: TextStyle(fontSize: 13.5, color: Colors.grey[400]),
+                _attachedFileName ?? 'Tambahkan file materi ...',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: _attachedFile != null
+                      ? Colors.black87
+                      : Colors.grey[400],
+                ),
               ),
             ),
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFCCCCCC), width: 1.5),
+            if (_attachedFile != null)
+              GestureDetector(
+                onTap: () => setState(() {
+                  _attachedFile = null;
+                  _attachedFileName = null;
+                }),
+                child: const Icon(Icons.close, size: 18, color: Colors.red),
               ),
-              child: const Icon(Icons.add, size: 16, color: Color(0xFF999999)),
-            ),
           ],
         ),
       ),

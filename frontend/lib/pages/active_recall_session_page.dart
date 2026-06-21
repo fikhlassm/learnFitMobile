@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/flash_card_service.dart';
-import 'notebook_page.dart';
+import '../services/session_log_service.dart';
 
 class ActiveRecallSessionPage extends StatefulWidget {
   final String topicTitle;
@@ -27,6 +27,7 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
   List<Map<String, dynamic>> _cards = [];
   final TextEditingController questionController = TextEditingController();
   final TextEditingController answerController = TextEditingController();
+  DateTime? _sessionStartedAt;
 
   @override
   void initState() {
@@ -59,6 +60,7 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
         ),
       );
     });
+    if (mounted) _sessionStartedAt = DateTime.now();
   } catch (e) {
     print(e);
   }
@@ -153,11 +155,25 @@ await FlashcardService.createFlashcard(
     }
   }
 
-  void _selesaikanSesi() {
-    Navigator.pop(
-  context,
-  true,
-);
+  Future<void> _selesaikanSesi() async {
+    final seconds = _sessionStartedAt == null
+        ? 1
+        : DateTime.now().difference(_sessionStartedAt!).inSeconds.clamp(1, 86400);
+
+    try {
+      await SessionLogService.createSessionLog(
+        studySessionId: widget.studySessionId,
+        durationSeconds: seconds,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan catatan waktu')),
+      );
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
   }
 
   @override

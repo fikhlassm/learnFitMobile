@@ -232,9 +232,11 @@ class _NotebookPageState extends State<NotebookPage> {
         break;
       case 'Feynman Technique':
         route = '/feynman-session';
+        args['studySessionId'] = sessionId;
         break;
       case 'Blurting':
         route = '/blurting-session';
+        args['studySessionId'] = sessionId;
         break;
       default:
         route = '/feynman-session';

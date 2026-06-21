@@ -189,10 +189,12 @@ switch (_selectedMethod) {
 
   case 'Feynman Technique':
     route = '/feynman-session';
+    args['studySessionId'] = sessionId;
     break;
 
   case 'Blurting':
     route = '/blurting-session';
+    args['studySessionId'] = sessionId;
     break;
 
   default:
