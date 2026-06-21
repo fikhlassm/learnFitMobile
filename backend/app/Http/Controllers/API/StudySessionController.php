@@ -51,7 +51,17 @@ class StudySessionController extends Controller implements HasMiddleware
 
     public function update(Request $request, StudySession $studySession)
     {
-        $studySession->content = $request->input('content');
+        $validated = $request->validate([
+            'topic' => ['sometimes', 'min:3', 'max:50'],
+            'content' => ['sometimes'],
+        ]);
+
+        if (array_key_exists('topic', $validated)) {
+            $studySession->topic = $validated['topic'];
+        }
+        if (array_key_exists('content', $validated)) {
+            $studySession->content = $validated['content'];
+        }
         $studySession->save();
 
         return response()->json([

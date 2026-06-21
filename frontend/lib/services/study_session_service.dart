@@ -70,12 +70,16 @@ class StudySessionService {
 
   static Future<void> updateStudySession({
     required int id,
-    required String content,
+    String? topic,
+    String? content,
   }) async {
+    final body = <String, dynamic>{};
+    if (topic != null) body['topic'] = topic;
+    if (content != null) body['content'] = content;
     final response = await http.patch(
       Uri.parse('$baseUrl/$id'),
       headers: await _headers(),
-      body: jsonEncode({'content': content}),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode != 200) {

@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final pages = [
       _HomeContent(onNavTap: _onNavTap),
-      const NotebookPage(),
+      NotebookPage(onSwitchToTab: (i) => setState(() => _selectedIndex = i)),
       const StatisticsPage(),
       const ProfilePage(),
     ];

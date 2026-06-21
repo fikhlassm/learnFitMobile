@@ -4,11 +4,11 @@ import 'feynman_session_page.dart';
 import 'pomodoro_session_page.dart';
 import 'active_recall_session_page.dart';
 import 'blurting_session_page.dart';
-import 'quiz_page.dart';
 import 'new_note_sheet.dart';
 
 class NotebookPage extends StatefulWidget {
-  const NotebookPage({super.key});
+  final ValueChanged<int>? onSwitchToTab;
+  const NotebookPage({super.key, this.onSwitchToTab});
 
   @override
   State<NotebookPage> createState() => _NotebookPageState();
@@ -16,6 +16,7 @@ class NotebookPage extends StatefulWidget {
 
 class _NotebookPageState extends State<NotebookPage> {
   List<dynamic> _notes = [];
+  int? _filterTechniqueId;
 
   // ─── Target sesi per minggu (ubah sesuai kebutuhan) ───
   static const int _weeklyTarget = 10;
@@ -106,6 +107,118 @@ class _NotebookPageState extends State<NotebookPage> {
   // ─── Computed: nama metode terbanyak ───
   String get _topMethodName => _getMethodName(_topMethodId);
 
+  // ─── Filtered notes ───
+  List<dynamic> get _filteredNotes {
+    if (_filterTechniqueId == null) return _notes;
+    return _notes.where((n) => (n['study_technique_id'] ?? 0) == _filterTechniqueId).toList();
+  }
+
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Filter Teknik', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              _filterChip(null, 'Semua'),
+              const SizedBox(height: 8),
+              for (final id in [1, 2, 3, 4]) _filterChip(id, _getMethodName(id)),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterChip(int? id, String label) {
+    final selected = _filterTechniqueId == id;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _filterTechniqueId = id);
+        Navigator.pop(context);
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFE3F2FD) : const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(12),
+          border: selected ? Border.all(color: const Color(0xFF2196F3), width: 1.5) : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              size: 18,
+              color: selected ? const Color(0xFF2196F3) : Colors.grey,
+            ),
+            const SizedBox(width: 10),
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: selected ? const Color(0xFF2196F3) : Colors.black87)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditDialog(Map<String, dynamic> note) async {
+    final ctrl = TextEditingController(text: note['title'] as String);
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Judul Catatan'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: InputDecoration(hintText: 'Judul catatan...'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    if (newTitle != null && newTitle.isNotEmpty) {
+      final id = note['id'] as int;
+      await StudySessionService.updateStudySession(id: id, topic: newTitle);
+      await _loadStudySessions();
+    }
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> note) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Catatan'),
+        content: Text('Yakin ingin menghapus "${note['title']}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      final id = note['id'] as int;
+      await StudySessionService.deleteStudySession(id);
+      await _loadStudySessions();
+    }
+  }
+
   Widget _sessionPageFor(Map<String, dynamic> note) {
     print('NOTE CLICKED = $note');
     final method = note['method'].toString();
@@ -170,10 +283,34 @@ class _NotebookPageState extends State<NotebookPage> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () {},
-                              child: const Row(
+                              onTap: _showFilterSheet,
+                              child: Row(
                                 children: [
-                                  Text(
+                                  if (_filterTechniqueId != null) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE3F2FD),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _getMethodName(_filterTechniqueId!),
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2196F3)),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          GestureDetector(
+                                            onTap: () => setState(() => _filterTechniqueId = null),
+                                            child: const Icon(Icons.close, size: 14, color: Color(0xFF2196F3)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  const Text(
                                     'Filter',
                                     style: TextStyle(
                                       fontSize: 13,
@@ -181,8 +318,8 @@ class _NotebookPageState extends State<NotebookPage> {
                                       color: Color(0xFF2196F3),
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Icon(
+                                  const SizedBox(width: 4),
+                                  const Icon(
                                     Icons.filter_alt_outlined,
                                     size: 16,
                                     color: Color(0xFF2196F3),
@@ -193,7 +330,7 @@ class _NotebookPageState extends State<NotebookPage> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        ..._notes.map((note) {
+                        ..._filteredNotes.map((note) {
                           final techniqueId = (note['study_technique_id'] ?? 0) as int;
                           return _buildNoteCard(
                             context,
@@ -202,6 +339,7 @@ class _NotebookPageState extends State<NotebookPage> {
                               'title': note['topic'] ?? '',
                               'date': 'Today',
                               'preview': note['content'] ?? '',
+                              'techniqueId': techniqueId,
                               'method': _getMethodName(techniqueId),
                               'methodColor': _getMethodColor(techniqueId),
                               'methodBg': _getMethodBg(techniqueId),
@@ -389,7 +527,7 @@ class _NotebookPageState extends State<NotebookPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => widget.onSwitchToTab?.call(2),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF2196F3),
@@ -451,10 +589,16 @@ class _NotebookPageState extends State<NotebookPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  note['date'] as String,
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFFAAAAAA)),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') _showEditDialog(note);
+                    if (value == 'delete') _confirmDelete(note);
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit Judul')),
+                    const PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                  ],
+                  icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFFAAAAAA)),
                 ),
               ],
             ),
