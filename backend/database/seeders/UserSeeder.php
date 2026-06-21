@@ -12,14 +12,14 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
+        User::query()->create([
             'name' => 'imam',
             'email' => 'imam@gmail.com',
             'password' => 'imam1234',
             'grade' => '12',
         ]);
 
-        User::factory()->create([
+        User::query()->create([
             'name' => 'budi',
             'email' => 'budi@gmail.com',
             'password' => 'budi1234',
