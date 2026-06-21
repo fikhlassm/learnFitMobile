@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-// Pastikan import ini mengarah ke file home_page.dart kamu
-import 'home_page.dart'; 
 
 class QuizResultPage extends StatelessWidget {
   final String method;
@@ -265,14 +263,11 @@ class QuizResultPage extends StatelessWidget {
                 height: 54,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushAndRemoveUntil(
+                    Navigator.pushNamedAndRemoveUntil(
                       context,
-                      // PERBAIKAN: Arahkan langsung ke class HomePage
-                      // initialIndex: 1 agar langsung membuka tab Notebook
-                      MaterialPageRoute(
-                        builder: (_) => const HomePage(initialIndex: 1),
-                      ),
-                      (route) => false, // Hapus semua halaman sebelumnya dari stack
+                      '/home',
+                      (route) => false,
+                      arguments: {'initialIndex': 1},
                     );
                   },
                   style: ElevatedButton.styleFrom(

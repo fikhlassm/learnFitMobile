@@ -5,12 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'notebook_page.dart';
 import 'statistics_page.dart';
 import 'profile_page.dart';
-import 'pomodoro_session_page.dart';
-import 'active_recall_session_page.dart';
-import 'blurting_session_page.dart';
-import 'feynman_session_page.dart';
-import 'new_note_sheet.dart';
-// Pastikan path import sesuai struktur folder kamu
 import '../services/flash_card_service.dart';
 
 // ─────────────────────────── Service helpers ───────────────────────────
@@ -607,18 +601,11 @@ class _HomeContentState extends State<_HomeContent> {
     title: 'Pomodoro',
     subtitle:
         'Bagi belajar ke dalam sesi fokus 25 menit diselingi istirahat singkat.',
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const NewNoteSheet(
-            preselectedMethod:
-                'Pomodoro',
-          ),
-        ),
-      );
-    },
+    onTap: () => Navigator.pushNamed(
+      context,
+      '/new-note',
+      arguments: {'preselectedMethod': 'Pomodoro'},
+    ),
   ),
 
   _TechniqueData(
@@ -629,18 +616,11 @@ class _HomeContentState extends State<_HomeContent> {
     title: 'Active Recall',
     subtitle:
         'Latih daya ingat dengan menjawab pertanyaan tanpa melihat catatan.',
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const NewNoteSheet(
-            preselectedMethod:
-                'Active Recall',
-          ),
-        ),
-      );
-    },
+    onTap: () => Navigator.pushNamed(
+      context,
+      '/new-note',
+      arguments: {'preselectedMethod': 'Active Recall'},
+    ),
   ),
 
   _TechniqueData(
@@ -651,18 +631,11 @@ class _HomeContentState extends State<_HomeContent> {
     title: 'Blurting',
     subtitle:
         'Tulis semua yang kamu ingat tentang suatu topik secepat mungkin.',
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const NewNoteSheet(
-            preselectedMethod:
-                'Blurting',
-          ),
-        ),
-      );
-    },
+    onTap: () => Navigator.pushNamed(
+      context,
+      '/new-note',
+      arguments: {'preselectedMethod': 'Blurting'},
+    ),
   ),
 
   _TechniqueData(
@@ -673,18 +646,11 @@ class _HomeContentState extends State<_HomeContent> {
     title: 'Feynman',
     subtitle:
         'Kuasai materi dengan menjelaskannya menggunakan bahasa sederhana.',
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const NewNoteSheet(
-            preselectedMethod:
-                'Feynman Technique',
-          ),
-        ),
-      );
-    },
+    onTap: () => Navigator.pushNamed(
+      context,
+      '/new-note',
+      arguments: {'preselectedMethod': 'Feynman Technique'},
+    ),
   ),
 ];
 

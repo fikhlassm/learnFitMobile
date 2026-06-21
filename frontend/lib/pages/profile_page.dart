@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-// ✅ GANTI IMPORT INI SESUAI NAMA FILE YANG KAMU BUAT
-import '../services/profile_service.dart'; 
-import '../services/auth_service.dart';       // Tetap butuh untuk Logout
-import '../pages/login_page.dart';
-import 'personal_information_page.dart';
-import 'study_reminders_page.dart';
-import 'support_center.dart';
+import '../services/profile_service.dart';
+import '../services/auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -230,38 +225,21 @@ class _ProfilePageState extends State<ProfilePage> {
                 context,
                 icon: Icons.person_outline_rounded,
                 label: 'Personal Information',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PersonalInformationPage(),
-                  ),
-                ),
+                onTap: () => Navigator.pushNamed(context, '/personal-information'),
               ),
               _divider(),
               _settingsItem(
                 context,
                 icon: Icons.notifications_none_rounded,
                 label: 'Study Reminders',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const StudyRemindersPage(),
-                  ),
-                ),
+                onTap: () => Navigator.pushNamed(context, '/study-reminders'),
               ),
               _divider(),
               _settingsItem(
                 context,
                 icon: Icons.help_outline_rounded,
                 label: 'Support Center',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SupportCenterPage(),
-                    ),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/support-center'),
               ),
             ],
           ),
@@ -386,11 +364,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (mounted) {
       if (result['success']) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'] ?? 'Logout gagal')),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -216,10 +215,7 @@ class WelcomePage extends StatelessWidget {
 
 GestureDetector(
   onTap: () {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    Navigator.pushReplacementNamed(context, '/home');
   },
   child: Padding(
     padding: const EdgeInsets.only(bottom: 32),

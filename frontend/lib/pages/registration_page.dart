@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'verification_page.dart';
 import '../services/auth_service.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -64,13 +63,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
       if (result['success']) {
         if (mounted) {
-          Navigator.pushReplacement(
+          Navigator.pushReplacementNamed(
             context,
-            MaterialPageRoute(
-              builder: (_) => VerificationPage(
-                email: _emailController.text.trim(),
-              ),
-            ),
+            '/verify',
+            arguments: _emailController.text.trim(),
           );
         }
       } else {

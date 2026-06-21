@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -46,10 +45,7 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('Login berhasil!')),
       );
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      Navigator.pushReplacementNamed(context, '/home');
     } else {
       // ❌ Login gagal - tampilkan error
       ScaffoldMessenger.of(context).showSnackBar(

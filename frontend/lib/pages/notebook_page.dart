@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/study_session_service.dart';
-import 'feynman_session_page.dart';
-import 'pomodoro_session_page.dart';
-import 'active_recall_session_page.dart';
-import 'blurting_session_page.dart';
-import 'new_note_sheet.dart';
 
 class NotebookPage extends StatefulWidget {
   final ValueChanged<int>? onSwitchToTab;
@@ -219,31 +214,32 @@ class _NotebookPageState extends State<NotebookPage> {
     }
   }
 
-  Widget _sessionPageFor(Map<String, dynamic> note) {
-    print('NOTE CLICKED = $note');
+  Future<void> _openSessionPage(Map<String, dynamic> note) async {
     final method = note['method'].toString();
     final title = note['title'].toString();
     final sessionId = int.tryParse(note['id'].toString()) ?? 0;
-    print('SESSION ID SENT = $sessionId');
 
+    String route;
+    final args = <String, dynamic>{'topicTitle': title};
     switch (method) {
       case 'Pomodoro':
-        return PomodoroSessionPage(
-          topicTitle: title,
-          studySessionId: sessionId,
-        );
+        route = '/pomodoro-session';
+        args['studySessionId'] = sessionId;
+        break;
       case 'Active Recall':
-        return ActiveRecallSessionPage(
-          topicTitle: title,
-          studySessionId: sessionId,
-        );
+        route = '/active-recall-session';
+        args['studySessionId'] = sessionId;
+        break;
       case 'Feynman Technique':
-        return FeynmanSessionPage(topicTitle: title);
+        route = '/feynman-session';
+        break;
       case 'Blurting':
-        return BlurtingSessionPage(topicTitle: title);
+        route = '/blurting-session';
+        break;
       default:
-        return FeynmanSessionPage(topicTitle: title);
+        route = '/feynman-session';
     }
+    await Navigator.pushNamed(context, route, arguments: args);
   }
 
   @override
@@ -356,10 +352,7 @@ class _NotebookPageState extends State<NotebookPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NewNoteSheet()),
-          );
+          final result = await Navigator.pushNamed(context, '/new-note');
           if (result == true) {
             await _loadStudySessions();
           }
@@ -550,14 +543,7 @@ class _NotebookPageState extends State<NotebookPage> {
 
   Widget _buildNoteCard(BuildContext context, Map<String, dynamic> note) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => _sessionPageFor(note),
-          ),
-        );
-      },
+      onTap: () => _openSessionPage(note),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),

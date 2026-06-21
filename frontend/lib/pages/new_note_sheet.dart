@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'feynman_session_page.dart';
-import 'pomodoro_session_page.dart';
-import 'active_recall_session_page.dart';
-import 'blurting_session_page.dart';
 import '../services/study_session_service.dart';
 
 // ── Data model tiap metode ──
@@ -177,48 +173,37 @@ Future<void> _startSession(
 
     if (!mounted) return;
 
-Widget page;
-
+String route;
+final args = <String, dynamic>{'topicTitle': title};
 switch (_selectedMethod) {
 
   case 'Pomodoro':
-    page = PomodoroSessionPage(
-      topicTitle: title,
-      studySessionId: sessionId,
-    );
+    route = '/pomodoro-session';
+    args['studySessionId'] = sessionId;
     break;
 
   case 'Active Recall':
-    page = ActiveRecallSessionPage(
-      topicTitle: title,
-      studySessionId: sessionId,
-    );
+    route = '/active-recall-session';
+    args['studySessionId'] = sessionId;
     break;
 
   case 'Feynman Technique':
-    page = FeynmanSessionPage(
-      topicTitle: title,
-    );
+    route = '/feynman-session';
     break;
 
   case 'Blurting':
-    page = BlurtingSessionPage(
-      topicTitle: title,
-    );
+    route = '/blurting-session';
     break;
 
   default:
-    page = FeynmanSessionPage(
-      topicTitle: title,
-    );
+    route = '/feynman-session';
 }
 
 final result =
-    await Navigator.push(
+    await Navigator.pushNamed(
   context,
-  MaterialPageRoute(
-    builder: (_) => page,
-  ),
+  route,
+  arguments: args,
 );
 
 if (result == true && mounted) {
