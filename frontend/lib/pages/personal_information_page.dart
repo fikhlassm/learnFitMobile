@@ -92,6 +92,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     try {
       final result = await _profileService.updateProfile(
         name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
         grade: _gradeController.text.trim(),
       );
 
@@ -161,9 +162,9 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                     _buildField('FULL NAME', _nameController),
                     const SizedBox(height: 14),
                     
-                    // Email read-only karena identitas utama
+                    // Email bisa diedit sesuai spek
                     _buildField('EMAIL ADDRESS', _emailController,
-                        keyboardType: TextInputType.emailAddress, readOnly: true),
+                        keyboardType: TextInputType.emailAddress),
                     
                     const SizedBox(height: 14),
                     _buildField('ACADEMIC GRADE', _gradeController,

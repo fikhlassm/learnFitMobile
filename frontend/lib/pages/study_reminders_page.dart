@@ -11,9 +11,20 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
   bool _dailyTargetEnabled = true;
   bool _streakReminderEnabled = true;
   bool _smartNotifEnabled = false;
-  int _selectedFrequency = 0; // 0=Setiap hari, 1=Hari kerja, 2=Weekend
+  int _selectedFrequency = 0; // 0=Setiap hari, 1=Hari kerja
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
 
-  final List<String> _frequencies = ['Setiap hari', 'Hari kerja', 'Weekend'];
+  final List<String> _frequencies = ['Setiap hari', 'Hari kerja'];
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _reminderTime,
+    );
+    if (picked != null && mounted) {
+      setState(() => _reminderTime = picked);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,10 +156,11 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
         children: [
           _reminderToggle(
             title: 'Target Belajar Harian',
-            subtitle: 'Dijadwalkan untuk\n08:00 PM',
+            subtitle: 'Dijadwalkan untuk\n${_reminderTime.format(context)}',
             subtitleColor: const Color(0xFF2196F3),
             value: _dailyTargetEnabled,
             onChanged: (val) => setState(() => _dailyTargetEnabled = val),
+            onSubtitleTap: _pickTime,
           ),
           Divider(height: 1, color: Colors.grey.shade100),
           _reminderToggle(
@@ -175,7 +187,15 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
     Color? subtitleColor,
     required bool value,
     required ValueChanged<bool> onChanged,
+    VoidCallback? onSubtitleTap,
   }) {
+    final subtitleText = Text(
+      subtitle,
+      style: TextStyle(
+          fontSize: 12,
+          color: subtitleColor ?? Colors.grey[500],
+          height: 1.4),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -190,11 +210,10 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
                         fontWeight: FontWeight.w600,
                         color: Colors.black87)),
                 const SizedBox(height: 3),
-                Text(subtitle,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: subtitleColor ?? Colors.grey[500],
-                        height: 1.4)),
+                if (onSubtitleTap != null)
+                  InkWell(onTap: onSubtitleTap, child: subtitleText)
+                else
+                  subtitleText,
               ],
             ),
           ),

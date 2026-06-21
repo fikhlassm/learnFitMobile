@@ -38,18 +38,20 @@ class ProfileService {
     }
   }
 
-  /// PATCH /api/profile (Update Nama, Grade, dll)
+  /// PATCH /api/profile (Update Nama, Email, Grade, dll)
   Future<Map<String, dynamic>> updateProfile({
     String? name,
+    String? email,
     String? grade,
     String? bio,
   }) async {
     try {
       final headers = await AuthService.getAuthHeaders();
-      
+
       // Siapkan body hanya dengan field yang diisi
       final Map<String, dynamic> body = {};
       if (name != null) body['name'] = name;
+      if (email != null) body['email'] = email;
       if (grade != null) body['grade'] = grade;
       if (bio != null) body['bio'] = bio;
 
