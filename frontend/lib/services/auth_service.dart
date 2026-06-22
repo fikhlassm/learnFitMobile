@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
 
   /// POST /api/login
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse(ApiConfig.login),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ class AuthService {
       final token = prefs.getString('auth_token');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/logout'),
+        Uri.parse(ApiConfig.logout),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse(ApiConfig.register),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ class AuthService {
   Future<Map<String, dynamic>> forgotPassword(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/forgot-password'), // Sesuaikan endpoint backendmu
+        Uri.parse(ApiConfig.forgotPassword),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -193,7 +193,7 @@ class AuthService {
   Future<Map<String, dynamic>> resendOtp(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/otp/resend'),
+        Uri.parse(ApiConfig.otpResend),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ class AuthService {
   Future<Map<String, dynamic>> verifyOtp(String email, String code) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/otp/verify'),
+        Uri.parse(ApiConfig.otpVerify),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

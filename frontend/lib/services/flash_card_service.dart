@@ -1,12 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class FlashcardService {
-  // PERBAIKAN: Gunakan localhost untuk Web/iOS Simulator
-  // Ganti ke 'http://10.0.2.2:8000/api/flashcards' jika pakai Android Emulator
-  static const String baseUrl = 'http://localhost:8000/api/flashcards';
-
   /// Helper untuk mengambil headers dengan token otomatis
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,7 +23,7 @@ class FlashcardService {
   static Future<int> getTotalFlashcards() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/total'),
+        Uri.parse(ApiConfig.flashcardsTotal),
         headers: await _headers(), // Menggunakan helper headers
       );
 
@@ -52,7 +49,7 @@ class FlashcardService {
     print('FLASHCARD SESSION ID = $studySessionId');
 
     final response = await http.get(
-      Uri.parse('$baseUrl?study_session_id=$studySessionId'),
+      Uri.parse('${ApiConfig.flashcards}?study_session_id=$studySessionId'),
       headers: await _headers(),
     );
 
@@ -83,7 +80,7 @@ class FlashcardService {
     print('CREATE FLASHCARD SESSION = $studySessionId');
 
     final response = await http.post(
-      Uri.parse(baseUrl),
+      Uri.parse(ApiConfig.flashcards),
       headers: await _headers(),
       body: jsonEncode({
         'study_session_id': studySessionId,
@@ -106,7 +103,7 @@ class FlashcardService {
     required String answer,
   }) async {
     final response = await http.patch(
-      Uri.parse('$baseUrl/$id'),
+      Uri.parse(ApiConfig.flashcard(id)),
       headers: await _headers(),
       body: jsonEncode({
         'question': question,
@@ -126,7 +123,7 @@ class FlashcardService {
     required int id,
   }) async {
     final response = await http.delete(
-      Uri.parse('$baseUrl/$id'),
+      Uri.parse(ApiConfig.flashcard(id)),
       headers: await _headers(),
     );
 

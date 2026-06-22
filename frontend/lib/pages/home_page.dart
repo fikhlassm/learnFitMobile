@@ -5,14 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'notebook_page.dart';
 import 'statistics_page.dart';
 import 'profile_page.dart';
+import '../config/api_config.dart';
 import '../services/flash_card_service.dart';
 
 // ─────────────────────────── Service helpers ───────────────────────────
 
 class _HomeApiService {
-  // Gunakan localhost untuk Web, atau IP laptop/10.0.2.2 untuk emulator
-  static const String _baseUrl = 'http://localhost:8000/api';
-
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token');
@@ -27,7 +25,7 @@ class _HomeApiService {
     final token = await _getToken();
     if (token == null) return {};
     try {
-      final res = await http.get(Uri.parse('$_baseUrl/profile'), headers: _headers(token));
+      final res = await http.get(Uri.parse(ApiConfig.profile), headers: _headers(token));
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body) as Map<String, dynamic>;
         return body['data'] as Map<String, dynamic>;
@@ -42,7 +40,7 @@ class _HomeApiService {
     final token = await _getToken();
     if (token == null) return {'total_seconds': 0};
     try {
-      final res = await http.get(Uri.parse('$_baseUrl/user-daily-stats'), headers: _headers(token));
+      final res = await http.get(Uri.parse(ApiConfig.userDailyStats), headers: _headers(token));
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body) as Map<String, dynamic>;
         final list = body['data'] as List<dynamic>;

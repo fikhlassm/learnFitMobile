@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-const String _baseUrl = 'http://127.0.0.1:8000/api';
+import '../config/api_config.dart';
 
 class QuizResultResponse<T> {
   final T? data;
@@ -52,7 +51,7 @@ class QuizResultService {
       final headers = await _authHeaders();
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/quiz-results'),
+        Uri.parse(ApiConfig.quizResults),
         headers: headers,
         body: jsonEncode({
           'study_technique_id': studyTechniqueId,

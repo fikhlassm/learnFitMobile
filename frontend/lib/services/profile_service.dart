@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart'; // Import AuthService untuk pakai helper getAuthHeaders
+import '../config/api_config.dart';
 
 class ProfileService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api'; // Atau pakai 10.0.2.2 jika di emulator Android
 
   /// GET /api/profile
   Future<Map<String, dynamic>> getProfile() async {
@@ -13,7 +13,7 @@ class ProfileService {
       final headers = await AuthService.getAuthHeaders();
       
       final response = await http.get(
-        Uri.parse('$baseUrl/profile'),
+        Uri.parse(ApiConfig.profile),
         headers: headers,
       );
 
@@ -56,7 +56,7 @@ class ProfileService {
       if (bio != null) body['bio'] = bio;
 
       final response = await http.patch(
-        Uri.parse('$baseUrl/profile'),
+        Uri.parse(ApiConfig.profile),
         headers: headers,
         body: jsonEncode(body),
       );
@@ -92,7 +92,7 @@ class ProfileService {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/profile/avatar'),
+        Uri.parse(ApiConfig.profileAvatar),
       );
 
       request.headers.addAll({

@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class SessionLogService {
-  static const String baseUrl =
-      'http://127.0.0.1:8000/api/session-logs';
-
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -34,7 +32,7 @@ class SessionLogService {
     );
 
     final response = await http.post(
-      Uri.parse(baseUrl),
+      Uri.parse(ApiConfig.sessionLogs),
 
       headers: await _headers(),
 
@@ -67,7 +65,7 @@ class SessionLogService {
       getSessionLogs() async {
 
     final response = await http.get(
-      Uri.parse(baseUrl),
+      Uri.parse(ApiConfig.sessionLogs),
 
       headers: await _headers(),
     );
