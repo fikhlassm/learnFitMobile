@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notebook_page.dart';
@@ -90,12 +91,36 @@ class _HomePageState extends State<HomePage> {
       const ProfilePage(),
     ];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: _BottomNav(
-        selectedIndex: _selectedIndex,
-        onTap: _onNavTap,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Keluar Aplikasi?'),
+            content: const Text('Apakah Anda yakin ingin keluar?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Keluar'),
+              ),
+            ],
+          ),
+        );
+        if (result == true) SystemNavigator.pop();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F6FA),
+        body: IndexedStack(index: _selectedIndex, children: pages),
+        bottomNavigationBar: _BottomNav(
+          selectedIndex: _selectedIndex,
+          onTap: _onNavTap,
+        ),
       ),
     );
   }

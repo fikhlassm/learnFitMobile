@@ -11,6 +11,7 @@ class NotebookPage extends StatefulWidget {
 
 class _NotebookPageState extends State<NotebookPage> {
   List<dynamic> _notes = [];
+  bool _isLoading = true;
   int? _filterTechniqueId;
 
   // ─── Target sesi per minggu (ubah sesuai kebutuhan) ───
@@ -25,12 +26,13 @@ class _NotebookPageState extends State<NotebookPage> {
   Future<void> _loadStudySessions() async {
     try {
       final data = await StudySessionService.getStudySessions();
-      print('STUDY SESSION API = $data');
       setState(() {
         _notes = data;
+        _isLoading = false;
       });
     } catch (e) {
       print(e);
+      setState(() => _isLoading = false);
     }
   }
 
@@ -262,8 +264,22 @@ class _NotebookPageState extends State<NotebookPage> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: _notes.isEmpty
+              child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
+                  : _notes.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.article_outlined, size: 64, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Belum ada catatan',
+                                style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                        )
                   : ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [

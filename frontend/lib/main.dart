@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/intro_page1.dart';
 import 'pages/intro_page2.dart';
 import 'pages/login_page.dart';
@@ -18,12 +19,16 @@ import 'pages/personal_information_page.dart';
 import 'pages/study_reminders_page.dart';
 import 'pages/support_center.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+  runApp(MyApp(isLoggedIn: token != null));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +40,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
       ),
-      initialRoute: '/intro1',
+      home: isLoggedIn ? const HomePage() : const IntroPage1(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/intro1':
