@@ -28,9 +28,13 @@ class QuizResultController extends Controller implements HasMiddleware
 
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'study_technique_id' => ['required', 'integer', 'exists:study_techniques,id'],
+        ]);
+
         QuizResult::query()->create([
             'user_id' => $request->user()->id,
-            'study_technique_id' => $request->input('study_technique_id'),
+            'study_technique_id' => $validated['study_technique_id'],
         ]);
 
         return response()->json([

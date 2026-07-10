@@ -211,32 +211,14 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   }
 
   Widget _buildAvatarSection() {
-    return Stack(
-      children: [
-        Container(
-          width: 90,
-          height: 90,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(Icons.person, color: Colors.grey, size: 50),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: const Color(0xFF2196F3),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-            ),
-            child: const Icon(Icons.edit, color: Colors.white, size: 13),
-          ),
-        ),
-      ],
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Icon(Icons.person, color: Colors.grey, size: 50),
     );
   }
 

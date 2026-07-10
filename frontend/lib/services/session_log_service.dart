@@ -10,15 +10,11 @@ class SessionLogService {
     final token =
         prefs.getString('auth_token');
 
-    print(
-      'SESSION LOG TOKEN = $token',
-    );
-
     return {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization':
-          'Bearer ${token ?? ''}',
+      if (token != null)
+        'Authorization': 'Bearer $token',
     };
   }
 

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart'; // Import AuthService untuk pakai helper getAuthHeaders
 import '../config/api_config.dart';
 
@@ -74,48 +73,6 @@ class ProfileService {
           'success': false,
           'message': data['message'] ?? 'Gagal memperbarui profil',
           'errors': data['errors'],
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Koneksi gagal: ${e.toString()}',
-      };
-    }
-  }
-
-  /// POST /api/profile/avatar (Upload Foto Profil - Opsional)
-  Future<Map<String, dynamic>> uploadAvatar(String filePath) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse(ApiConfig.profileAvatar),
-      );
-
-      request.headers.addAll({
-        'Accept': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      });
-
-      request.files.add(await http.MultipartFile.fromPath('avatar', filePath));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {
-          'success': true,
-          'data': data['data'] ?? data,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Gagal mengupload foto',
         };
       }
     } catch (e) {

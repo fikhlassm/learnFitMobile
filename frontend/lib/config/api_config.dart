@@ -22,7 +22,6 @@ class ApiConfig {
 
   // profile
   static String get profile => '$_host/profile';
-  static String get profileAvatar => '$_host/profile/avatar';
 
   // stats
   static String get userDailyStats => '$_host/user-daily-stats';

@@ -30,12 +30,16 @@ class EvaluationController extends Controller implements HasMiddleware
         $studySessionId = $studySession->id;
         $technique = $studySession->studyTechnique->name;
 
+        if (! in_array($technique, ['feynman', 'blurting'], true)) {
+            return response()->json([
+                'message' => 'AI evaluation is not available for this study technique.',
+            ], 422);
+        }
+
         try {
             if ($technique === 'feynman') {
                 $response = FeynmanAgent::make($studySessionId)->prompt($prompt);
-            }
-
-            if ($technique === 'blurting') {
+            } else {
                 $response = BlurtingAgent::make($studySessionId)->prompt($prompt);
             }
 

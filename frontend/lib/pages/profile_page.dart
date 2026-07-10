@@ -128,30 +128,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileHeader() {
     return Column(
       children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 46,
-              backgroundColor: Colors.grey.shade200,
-              child: _isLoadingProfile
-                  ? const CircularProgressIndicator()
-                  : const Icon(Icons.person, color: Colors.grey, size: 52),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2196F3),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: const Icon(Icons.edit, color: Colors.white, size: 14),
-              ),
-            ),
-          ],
+        CircleAvatar(
+          radius: 46,
+          backgroundColor: Colors.grey.shade200,
+          child: _isLoadingProfile
+              ? const CircularProgressIndicator()
+              : const Icon(Icons.person, color: Colors.grey, size: 52),
         ),
         const SizedBox(height: 14),
         Text(

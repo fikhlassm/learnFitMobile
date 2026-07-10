@@ -30,10 +30,11 @@ class StudySessionController extends Controller implements HasMiddleware
     {
         $validated = $request->validate([
             'topic' => ['required', 'min:3', 'max:50'],
+            'study_technique_id' => ['required', 'integer', 'exists:study_techniques,id'],
         ]);
 
         $studySession = $request->user()->studySessions()->create([
-            'study_technique_id' => $request->input('study_technique_id'),
+            'study_technique_id' => $validated['study_technique_id'],
             'topic' => $validated['topic'],
         ]);
 

@@ -33,6 +33,10 @@ class _PomodoroSessionPageState
   int _remainingSeconds =
       _workDuration;
 
+  // Total detik dari siklus-siklus yang sudah selesai penuh.
+  // Siklus yang sedang berjalan dihitung terpisah lewat _remainingSeconds.
+  int _accumulatedSeconds = 0;
+
   bool _isRunning = false;
 
   Timer? _timer;
@@ -138,6 +142,11 @@ Future<void> _loadSessionData() async {
               if (_currentSession <
                   _totalSessions) {
 
+                // Siklus ini selesai penuh -> simpan ke akumulator
+                // sebelum reset untuk siklus berikutnya.
+                _accumulatedSeconds +=
+                    _workDuration;
+
                 _currentSession++;
 
                 _remainingSeconds =
@@ -174,8 +183,11 @@ Future<void> _loadSessionData() async {
 
   int get _completedDuration {
 
-    return _workDuration -
-        _remainingSeconds;
+    // Total waktu fokus = siklus-siklus penuh yang sudah selesai
+    // + progres siklus yang sedang berjalan.
+    return _accumulatedSeconds +
+        (_workDuration -
+            _remainingSeconds);
   }
 
   Future<void> _selesaikanSesi() async {
@@ -206,14 +218,6 @@ Future<void> _loadSessionData() async {
 
   try {
 
-    print(
-      'SESSION ID SENT = ${widget.studySessionId}',
-    );
-
-    print(
-      'COMPLETED DURATION = $_completedDuration',
-    );
-
     await StudySessionService.updateStudySession(
       id: widget.studySessionId,
       content: _notesController.text,
@@ -228,6 +232,8 @@ Future<void> _loadSessionData() async {
 
       _remainingSeconds =
           _workDuration;
+
+      _accumulatedSeconds = 0;
 
       _currentSession = 1;
 
@@ -619,7 +625,7 @@ Future<void> _loadSessionData() async {
                 ),
 
                 Text(
-                  'Otomatis tersimpan',
+                  'Tersimpan saat sesi selesai',
 
                   style: TextStyle(
                     fontSize: 11.5,

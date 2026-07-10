@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('study_session_attachments');
+        Schema::dropIfExists('attachments');
     }
 };

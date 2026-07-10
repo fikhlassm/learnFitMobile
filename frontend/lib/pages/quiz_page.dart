@@ -238,11 +238,23 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       final techniqueId = _determineTechniqueId();
 
       try {
-        await QuizResultService.store(
+        final saveResult = await QuizResultService.store(
           studyTechniqueId: techniqueId,
         );
 
         if (!mounted) return;
+
+        // Hasil rekomendasi dihitung lokal, jadi tetap ditampilkan.
+        // Tapi kalau penyimpanan ke server gagal, beri tahu user (jangan pura-pura sukses).
+        if (!saveResult.isSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                saveResult.error ?? 'Hasil tidak tersimpan ke server.',
+              ),
+            ),
+          );
+        }
 
         Navigator.pushReplacementNamed(
           context,

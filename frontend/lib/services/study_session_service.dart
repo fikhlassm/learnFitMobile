@@ -6,11 +6,11 @@ import '../config/api_config.dart';
 class StudySessionService {
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? '';
+    final token = prefs.getString('auth_token');
     return {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
+      if (token != null) 'Authorization': 'Bearer $token',
     };
   }
 

@@ -271,7 +271,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
                   ),
                 ),
                 Text(
-                  'Otomatis tersimpan',
+                  'Tersimpan saat sesi selesai',
                   style: TextStyle(fontSize: 11.5, color: Colors.grey[400]),
                 ),
               ],
