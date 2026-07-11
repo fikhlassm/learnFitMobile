@@ -205,16 +205,20 @@ class _SupportCenterPageState extends State<SupportCenterPage> {
   void _showFAQSheet(BuildContext context) {
     final faqs = [
       {
-        'q': 'Bagaimana cara mengatur target belajar harian?',
-        'a': 'Buka halaman Statistic dan klik tombol Edit Target.',
+        'q': 'Metode belajar apa saja yang tersedia?',
+        'a': 'LearnFit mendukung Pomodoro, Feynman, Active Recall, dan Blurting.',
       },
       {
-        'q': 'Apakah data saya aman?',
-        'a': 'Ya, data kamu terenkripsi dan disimpan dengan aman.',
+        'q': 'Bagaimana cara mengatur pengingat belajar?',
+        'a': 'Buka Study Reminders, atur toggle, waktu, dan frekuensi, lalu tekan Simpan Pengingat.',
       },
       {
-        'q': 'Bagaimana cara reset password?',
-        'a': 'Buka Profile > Privacy & Security > Change Password.',
+        'q': 'Apa fungsi Study Reminders?',
+        'a': 'Study Reminders menyimpan preferensi pengingat di perangkat dan dapat menjadwalkan notifikasi berdasarkan waktu serta frekuensi yang dipilih.',
+      },
+      {
+        'q': 'Bagaimana cara saya menggunakan evaluasi AI?',
+        'a': 'Upload file materi terlebih dahulu jika ada. Setelah itu, ketik catatanmu di notebook. Pada sesi Feynman, tekan Cek Pemahaman. Pada sesi Blurting, tekan Cek Hafalan.',
       },
     ];
 
@@ -225,34 +229,36 @@ class _SupportCenterPageState extends State<SupportCenterPage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('FAQ',
-                style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 16),
-            ...faqs.map((faq) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(faq['q']!,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87)),
-                      const SizedBox(height: 4),
-                      Text(faq['a']!,
-                          style: TextStyle(
-                              fontSize: 12.5,
-                              color: Colors.grey[500],
-                              height: 1.5)),
-                    ],
-                  ),
-                )),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('FAQ',
+                  style:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 16),
+              ...faqs.map((faq) => Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(faq['q']!,
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87)),
+                        const SizedBox(height: 4),
+                        Text(faq['a']!,
+                            style: TextStyle(
+                                fontSize: 12.5,
+                                color: Colors.grey[500],
+                                height: 1.5)),
+                      ],
+                    ),
+                  )),
+            ],
+          ),
         ),
       ),
     );

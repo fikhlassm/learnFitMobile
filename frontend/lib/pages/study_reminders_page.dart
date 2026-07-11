@@ -11,8 +11,8 @@ class StudyRemindersPage extends StatefulWidget {
 }
 
 class _StudyRemindersPageState extends State<StudyRemindersPage> {
-  bool _dailyTargetEnabled = true;
-  bool _streakReminderEnabled = true;
+  bool _dailyTargetEnabled = false;
+  bool _streakReminderEnabled = false;
   bool _isLoading = true;
   bool _isSaving = false;
   int _selectedFrequency = 0; // 0=Setiap hari, 1=Hari kerja
@@ -36,8 +36,8 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _dailyTargetEnabled = prefs.getBool(_dailyTargetKey) ?? true;
-      _streakReminderEnabled = prefs.getBool(_streakKey) ?? true;
+      _dailyTargetEnabled = prefs.getBool(_dailyTargetKey) ?? false;
+      _streakReminderEnabled = prefs.getBool(_streakKey) ?? false;
       _selectedFrequency = prefs.getInt(_frequencyKey) ?? 0;
       _reminderTime = TimeOfDay(
         hour: prefs.getInt(_hourKey) ?? 20,
