@@ -44,10 +44,6 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       if (result['success']) {
         final data = result['data'];
         
-        // DEBUG: Cek data apa yang diterima dari backend di Terminal/Console
-        print('📦 Full Data Profile: $data');
-        print('🎓 Grade Value: ${data['grade']}');
-
         setState(() {
           _nameController.text = data['name'] ?? '';
           _emailController.text = data['email'] ?? '';
@@ -162,9 +158,9 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                     _buildField('FULL NAME', _nameController),
                     const SizedBox(height: 14),
                     
-                    // Email bisa diedit sesuai spek
                     _buildField('EMAIL ADDRESS', _emailController,
-                        keyboardType: TextInputType.emailAddress),
+                        keyboardType: TextInputType.emailAddress,
+                        readOnly: true),
                     
                     const SizedBox(height: 14),
                     _buildField('ACADEMIC GRADE', _gradeController,
@@ -243,7 +239,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: readOnly ? Colors.grey[100] : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200),
           ),

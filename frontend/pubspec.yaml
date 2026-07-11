@@ -1,5 +1,5 @@
 name: learnfitmob
-description: "A new Flutter project."
+description: "A learning companion that helps students identify their learning style, provides a digital notebook for 4 evidence-based study techniques, and tracks study consistency metrics."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -28,11 +28,16 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  flutter:
+    sdk: flutter
   http: ^1.0.0          # atau ^0.13.6 kalau Flutter lama
   shared_preferences: ^2.2.0
   cupertino_icons: ^1.0.8
   flutter_secure_storage: ^9.0.0
   file_picker: ^8.0.0
+  flutter_local_notifications: ^22.0.1
+  timezone: ^0.11.1
+  flutter_timezone: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -44,6 +49,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -60,8 +66,12 @@ flutter:
     - assets/images/intro2_forest.png
     - assets/images/intro2_graph.png
     - assets/images/login_hero.png
+    - assets/logo/logo.png
 
-
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo/logo.png"
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

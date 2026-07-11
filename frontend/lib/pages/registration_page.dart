@@ -17,7 +17,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _agreeToTerms = false;
   bool _isLoading = false;
 
   @override
@@ -46,11 +45,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
       _showSnackBar('Password dan konfirmasi password tidak cocok');
       return;
     }
-    if (!_agreeToTerms) {
-      _showSnackBar('Anda harus menyetujui syarat dan ketentuan');
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -328,57 +322,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
             ),
             const SizedBox(height: 16),
 
-            // Syarat & Ketentuan
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: Checkbox(
-                    value: _agreeToTerms,
-                    onChanged: (val) => setState(() => _agreeToTerms = val ?? false),
-                    activeColor: const Color(0xFF2196F3),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    side: BorderSide(color: Colors.grey[400]!, width: 1.5),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(fontSize: 12.5, color: Colors.grey[600], height: 1.5),
-                      children: const [
-                        TextSpan(text: 'Saya setuju dengan '),
-                        TextSpan(
-                          text: 'Syarat & Ketentuan',
-                          style: TextStyle(color: Color(0xFF2196F3), fontWeight: FontWeight.w500),
-                        ),
-                        TextSpan(text: ' serta '),
-                        TextSpan(
-                          text: 'Kebijakan Privasi',
-                          style: TextStyle(color: Color(0xFF2196F3), fontWeight: FontWeight.w500),
-                        ),
-                        TextSpan(text: ' LearnFit.'),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
             // ── TOMBOL BUAT AKUN (YANG DIPERBAIKI) ──
             SizedBox(
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: _agreeToTerms && !_isLoading ? _handleRegister : null,
+                onPressed: _isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2196F3),
-                  disabledBackgroundColor: const Color(0xFF2196F3).withOpacity(0.5),
+                  disabledBackgroundColor: const Color(0xFF2196F3).withValues(alpha: 0.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

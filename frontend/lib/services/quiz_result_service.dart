@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
@@ -58,8 +57,6 @@ class QuizResultService {
         }),
       );
 
-      debugPrint('[QuizResultService] store → ${response.statusCode} ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         return const QuizResultResponse.success(null);
       }
@@ -70,7 +67,6 @@ class QuizResultService {
 
       return QuizResultResponse.failure(_parseError(response));
     } catch (e) {
-      debugPrint('[QuizResultService] store exception: $e');
       return const QuizResultResponse.failure('Tidak dapat terhubung ke server.');
     }
   }

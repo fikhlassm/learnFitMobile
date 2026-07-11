@@ -60,7 +60,7 @@ class QuizResultPage extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
@@ -156,7 +156,7 @@ class QuizResultPage extends StatelessWidget {
                                       minHeight: 5,
                                       backgroundColor: Colors.grey.shade200,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        isWinner ? color : color.withOpacity(0.35),
+                                        isWinner ? color : color.withValues(alpha: 0.35),
                                       ),
                                     ),
                                   ),
@@ -192,7 +192,7 @@ class QuizResultPage extends StatelessWidget {
                             border: Border.all(color: Colors.grey.shade100, width: 1),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),

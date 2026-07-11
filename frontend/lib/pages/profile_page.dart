@@ -19,8 +19,8 @@ class _ProfilePageState extends State<ProfilePage> {
   
   // Variabel untuk menyimpan data profil
   String _name = 'Loading...';
+  // ignore: unused_field
   String _email = '';
-  String _grade = '-'; 
   String _joinDate = '';
 
   @override
@@ -41,7 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _name = data['name'] ?? 'User';
         _email = data['email'] ?? '';
         // Asumsi backend mengirim field 'grade' atau sejenisnya
-        _grade = data['grade'] ?? 'Grade 11'; 
+
         
         // Format tanggal join jika ada, atau hardcode sementara
         if (data['created_at'] != null) {
@@ -57,6 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       });
     } else {
+      if (!mounted) return;
       // Jika gagal, tampilkan nama default atau error
       setState(() {
         _name = 'Guest User';
@@ -145,33 +146,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _grade,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2196F3),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text('•', style: TextStyle(color: Colors.grey[400])),
-            const SizedBox(width: 8),
-            Text(
+        Text(
               _joinDate,
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
-          ],
-        ),
       ],
     );
   }
@@ -195,7 +173,7 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),

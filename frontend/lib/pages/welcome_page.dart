@@ -59,7 +59,7 @@ class WelcomePage extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 8,
                         ),
                       ],
@@ -125,7 +125,7 @@ class WelcomePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.07),
+                            color: Colors.black.withValues(alpha: 0.07),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -211,26 +211,23 @@ class WelcomePage extends StatelessWidget {
               ),
             ),
 
-            const Spacer(),
+            const SizedBox(height: 30),
 
-GestureDetector(
-  onTap: () {
-    Navigator.pushReplacementNamed(context, '/home');
-  },
-  child: Padding(
-    padding: const EdgeInsets.only(bottom: 32),
-    child: Text(
-      'Lakukan Nanti',
-      style: TextStyle(
-        fontSize: 14,
-        color: Colors.grey[700],
-        fontWeight: FontWeight.w600,
-        decoration: TextDecoration.underline,
-        decorationColor: Colors.grey[700],
-      ),
-    ),
-  ),
-),
+            GestureDetector(
+              onTap: () {
+                Navigator.pushReplacementNamed(context, '/home');
+              },
+              child: Text(
+                'Lakukan Nanti',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                  decorationColor: Colors.grey[700],
+                ),
+              ),
+            ),
           ]
         ),
       ),

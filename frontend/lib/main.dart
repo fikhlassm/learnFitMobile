@@ -18,9 +18,11 @@ import 'pages/active_recall_session_page.dart';
 import 'pages/personal_information_page.dart';
 import 'pages/study_reminders_page.dart';
 import 'pages/support_center.dart';
+import 'services/reminder_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ReminderNotificationService.instance.init();
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
   runApp(MyApp(isLoggedIn: token != null));

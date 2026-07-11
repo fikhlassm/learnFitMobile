@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/session_log_service.dart';
 import '../services/user_daily_stats_service.dart';
 
 class StatisticsPage extends StatefulWidget {
@@ -15,6 +16,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   List<dynamic> _allStats = [];
   List<dynamic> _filteredStats = [];
+  List<dynamic> _sessionLogs = [];
   bool _isLoading = true;
   bool _showAllActivities = false;
 
@@ -28,21 +30,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
     setState(() => _isLoading = true);
     
     try {
-      final data = await UserDailyStatService.getUserDailyStats();
+      final results = await Future.wait([
+        UserDailyStatService.getUserDailyStats(),
+        SessionLogService.getSessionLogs(),
+      ]);
       
       if (mounted) {
         setState(() {
-          _allStats = data ?? []; 
+          _allStats = results[0];
+          _sessionLogs = results[1];
           _applyFilter(); 
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Load Stats Error: $e');
       if (mounted) {
         setState(() {
           _allStats = [];
           _filteredStats = [];
+          _sessionLogs = [];
           _isLoading = false;
         });
       }
@@ -240,6 +246,79 @@ class _StatisticsPageState extends State<StatisticsPage> {
     }
   }
 
+  List<dynamic> get _filteredSessionLogs {
+    final now = DateTime.now();
+    return _sessionLogs.where((log) {
+      final createdAt = log['created_at']?.toString() ?? '';
+      if (createdAt.isEmpty) return false;
+      try {
+        final date = DateTime.parse(createdAt).toLocal();
+        switch (_selectedPeriod) {
+          case 0:
+            return date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day;
+          case 1:
+            final sevenDaysAgo = now.subtract(const Duration(days: 6));
+            final start = DateTime(sevenDaysAgo.year, sevenDaysAgo.month, sevenDaysAgo.day);
+            final end = DateTime(now.year, now.month, now.day + 1);
+            return !date.isBefore(start) && date.isBefore(end);
+          case 2:
+            return date.year == now.year && date.month == now.month;
+          default:
+            return true;
+        }
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  String _techniqueName(int id) {
+    switch (id) {
+      case 1:
+        return 'Pomodoro';
+      case 2:
+        return 'Feynman';
+      case 3:
+        return 'Active Recall';
+      case 4:
+        return 'Blurting';
+      default:
+        return 'Study Session';
+    }
+  }
+
+  IconData _techniqueIcon(int id) {
+    switch (id) {
+      case 1:
+        return Icons.timer_outlined;
+      case 2:
+        return Icons.school_outlined;
+      case 3:
+        return Icons.psychology_outlined;
+      case 4:
+        return Icons.edit_note_outlined;
+      default:
+        return Icons.article_outlined;
+    }
+  }
+
+  Color _techniqueColor(int id) {
+    switch (id) {
+      case 1:
+        return const Color(0xFF2196F3);
+      case 2:
+        return const Color(0xFF9C27B0);
+      case 3:
+        return const Color(0xFF2E7D32);
+      case 4:
+        return const Color(0xFFFF7043);
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -299,7 +378,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 5)] : null,
+                  boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 5)] : null,
                 ),
                 child: Text(_periods[i], textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? const Color(0xFF2196F3) : Colors.grey[500])),
               ),
@@ -425,15 +504,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
         child: Column(children: [Icon(icon, color: iconColor, size: 20), const SizedBox(height: 6), Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.grey[500])), const SizedBox(height: 4), Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor ?? Colors.black87))]),
       ),
     );
   }
 
   Widget _buildRecentActivities() {
-    final list = _showAllActivities ? _activitiesFrom(_filteredStats) : _activitiesFrom(_filteredStats.take(3).toList());
-    final canExpand = _filteredStats.length > 3;
+    final logs = _filteredSessionLogs;
+    final list = _showAllActivities ? _activitiesFrom(logs) : _activitiesFrom(logs.take(3));
+    final canExpand = logs.length > 3;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -473,19 +553,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   List<Map<String, dynamic>> _activitiesFrom(Iterable<dynamic> stats) {
-    return stats.map((stat) {
-      final seconds = (stat['duration_seconds'] ?? stat['total_seconds'] ?? 0) as num;
+    return stats.map((log) {
+      final session = log['study_session'] as Map<String, dynamic>?;
+      final techniqueId = (session?['study_technique_id'] ?? 0) as int;
+      final seconds = (log['duration_seconds'] ?? 0) as num;
       final duration = (seconds / 60).round();
       return {
-        'title': stat['topic'] ?? 'Study Session',
-        'type': stat['study_technique_name'] ??
-            stat['method_name'] ??
-            stat['study_method'] ??
-            'Pomodoro',
+        'title': session?['topic'] ?? 'Study Session',
+        'type': _techniqueName(techniqueId),
         'duration': '$duration m',
         'status': 'SELESAI',
-        'icon': Icons.access_time_outlined,
-        'color': const Color(0xFF2196F3),
+        'icon': _techniqueIcon(techniqueId),
+        'color': _techniqueColor(techniqueId),
       };
     }).toList();
   }
@@ -494,10 +573,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
       child: Row(
         children: [
-          Container(width: 42, height: 42, decoration: BoxDecoration(color: (activity['color'] as Color).withOpacity(0.12), borderRadius: BorderRadius.circular(12)), child: Icon(activity['icon'] as IconData, color: activity['color'] as Color, size: 20)),
+          Container(width: 42, height: 42, decoration: BoxDecoration(color: (activity['color'] as Color).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)), child: Icon(activity['icon'] as IconData, color: activity['color'] as Color, size: 20)),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(activity['title'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)), const SizedBox(height: 2), Text(activity['type'], style: TextStyle(fontSize: 11.5, color: Colors.grey[500]))])),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(activity['duration'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87)), const SizedBox(height: 2), Text(activity['status'], style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF4CAF50)))]),

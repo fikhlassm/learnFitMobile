@@ -21,10 +21,15 @@ class FeynmanSessionPage extends StatefulWidget {
 }
 
 class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
+  static const int _minLogSeconds = 15;
+
   late final TextEditingController _titleController;
   final TextEditingController _notesController = TextEditingController();
   bool _showResponse = false;
   bool _isLoading = false;
+  bool _hasLoggedSession = false;
+  bool _isExiting = false;
+  bool _allowPop = false;
   String _responseText = '';
   File? _attachedFile;
   String? _attachedFileName;
@@ -33,6 +38,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   @override
   void initState() {
     super.initState();
+    _sessionStartedAt = DateTime.now();
     _titleController = TextEditingController(text: widget.topicTitle);
     _loadSessionData();
   }
@@ -47,7 +53,6 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
       setState(() {
         _notesController.text = data['content'] ?? '';
       });
-      if (mounted) _sessionStartedAt = DateTime.now();
     } catch (_) {}
   }
 
@@ -134,32 +139,40 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     }
   }
 
-  Future<void> _selesaikanSesi() async {
-    if (_isLoading) return;
+  Future<void> _exitSession() async {
+    if (_isExiting || _isLoading) return;
+    _isExiting = true;
+
     await StudySessionService.updateStudySession(
       id: widget.studySessionId,
       content: _notesController.text,
     );
 
     final seconds = _sessionStartedAt == null
-        ? 1
+        ? 0
         : DateTime.now().difference(_sessionStartedAt!).inSeconds.clamp(1, 86400);
 
-    try {
-      await SessionLogService.createSessionLog(
-        studySessionId: widget.studySessionId,
-        durationSeconds: seconds,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan catatan waktu')),
-      );
+    if (!_hasLoggedSession && seconds >= _minLogSeconds) {
+      _hasLoggedSession = true;
+      try {
+        await SessionLogService.createSessionLog(
+          studySessionId: widget.studySessionId,
+          durationSeconds: seconds,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menyimpan catatan waktu')),
+        );
+      }
     }
 
     if (!mounted) return;
+    setState(() => _allowPop = true);
     Navigator.pop(context, true);
   }
+
+  Future<void> _selesaikanSesi() => _exitSession();
 
   @override
   void dispose() {
@@ -170,9 +183,14 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: SafeArea(
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _exitSession();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F6FA),
+        body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 16),
@@ -193,8 +211,9 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
             _buildBottomButton(),
           ],
         ),
+        ),
+
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -205,7 +224,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
       child: Row(
         children: [
           InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: _exitSession,
             borderRadius: BorderRadius.circular(8),
             child: const Icon(Icons.chevron_left,
                 color: Color(0xFF2196F3), size: 28),
@@ -228,13 +247,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
               onSubmitted: (_) => _saveTitle(),
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.menu, color: Colors.black87, size: 22),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
+          const SizedBox(width: 36),
         ],
       ),
     );
@@ -247,7 +260,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -475,53 +488,5 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     );
   }
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Icons.home_outlined, 'Home', false),
-              _navItem(Icons.article_outlined, 'Notebook', true),
-              _navItem(Icons.track_changes_outlined, 'Goals', false),
-              _navItem(Icons.person_outline, 'Profile', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _navItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon,
-            size: 24,
-            color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
-          ),
-        ),
-      ],
-    );
-  }
 }

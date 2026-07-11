@@ -19,19 +19,7 @@ class IntroPage2 extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF26A69A),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
+
                     const SizedBox(width: 8),
                     const Text(
                       'LearnFit',
@@ -59,7 +47,7 @@ class IntroPage2 extends StatelessWidget {
                     width: double.infinity,
                     height: 200,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const _ForestPlaceholder(),
+                    errorBuilder: (_, _, _) => const _ForestPlaceholder(),
                   ),
                   Positioned(
                     top: 12,
@@ -114,7 +102,7 @@ class IntroPage2 extends StatelessWidget {
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const _GraphPlaceholder(),
+                errorBuilder: (_, _, _) => const _GraphPlaceholder(),
               ),
             ),
 
@@ -180,7 +168,7 @@ class IntroPage2 extends StatelessWidget {
 
             Center(
               child: Text(
-                'Bergabunglah dengan 50.000+ kawannya',
+                '',
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
             ),

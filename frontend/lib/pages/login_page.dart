@@ -38,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     setState(() => _isLoading = false);
+    if (!mounted) return;
 
     if (result['success']) {
       // ✅ Login berhasil
@@ -103,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 180,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _HeroPlaceholder(),
+                errorBuilder: (_, _, _) => _HeroPlaceholder(),
               ),
             ),
 
@@ -340,7 +341,7 @@ class _HeroPlaceholder extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(2, 4),
                 ),
@@ -364,7 +365,7 @@ class _HeroPlaceholder extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 6,
                     ),
                   ],

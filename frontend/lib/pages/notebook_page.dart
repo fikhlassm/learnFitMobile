@@ -31,7 +31,6 @@ class _NotebookPageState extends State<NotebookPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print(e);
       setState(() => _isLoading = false);
     }
   }
@@ -420,7 +419,7 @@ class _NotebookPageState extends State<NotebookPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -487,7 +486,7 @@ class _NotebookPageState extends State<NotebookPage> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 5,
-              backgroundColor: Colors.white.withOpacity(0.25),
+              backgroundColor: Colors.white.withValues(alpha: 0.25),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
@@ -517,7 +516,7 @@ class _NotebookPageState extends State<NotebookPage> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -570,7 +569,7 @@ class _NotebookPageState extends State<NotebookPage> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -599,8 +598,26 @@ class _NotebookPageState extends State<NotebookPage> {
                     if (value == 'delete') _confirmDelete(note);
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Edit Judul')),
-                    const PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Edit Judul'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Hapus', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
                   ],
                   icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFFAAAAAA)),
                 ),
@@ -650,13 +667,14 @@ class _NotebookPageState extends State<NotebookPage> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),
@@ -671,7 +689,7 @@ class _NotebookPageState extends State<NotebookPage> {
             children: [
               _navItem(Icons.home_outlined, 'Home', false),
               _navItem(Icons.article_outlined, 'Notebook', true),
-              _navItem(Icons.track_changes_outlined, 'Goals', false),
+               _navItem(Icons.track_changes_outlined, 'Statistic', false),
               _navItem(Icons.person_outline, 'Profile', false),
             ],
           ),

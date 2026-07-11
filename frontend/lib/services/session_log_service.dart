@@ -23,10 +23,6 @@ class SessionLogService {
     required int durationSeconds,
   }) async {
 
-    print(
-      'SESSION LOG ID = $studySessionId',
-    );
-
     final response = await http.post(
       Uri.parse(ApiConfig.sessionLogs),
 
@@ -39,14 +35,6 @@ class SessionLogService {
         'duration_seconds':
             durationSeconds,
       }),
-    );
-
-    print(
-      'SESSION LOG STATUS = ${response.statusCode}',
-    );
-
-    print(
-      'SESSION LOG BODY = ${response.body}',
     );
 
     if (response.statusCode != 200 &&
@@ -64,14 +52,6 @@ class SessionLogService {
       Uri.parse(ApiConfig.sessionLogs),
 
       headers: await _headers(),
-    );
-
-    print(
-      'GET SESSION LOG STATUS = ${response.statusCode}',
-    );
-
-    print(
-      'GET SESSION LOG BODY = ${response.body}',
     );
 
     if (response.statusCode == 200) {

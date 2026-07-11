@@ -57,9 +57,6 @@ class StudySessionService {
       }),
     );
 
-    print(response.statusCode);
-    print(response.body);
-
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to create session');
     }

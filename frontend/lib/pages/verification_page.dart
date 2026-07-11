@@ -153,9 +153,11 @@ class _VerificationPageState extends State<VerificationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -170,21 +172,6 @@ class _VerificationPageState extends State<VerificationPage> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: InkWell(
-                                onTap: () => Navigator.pop(context),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  child: const Icon(
-                                    Icons.chevron_left,
-                                    color: Color(0xFF2196F3),
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                            ),
                             const Text(
                               'LearnFit',
                               style: TextStyle(
@@ -348,7 +335,7 @@ class _VerificationPageState extends State<VerificationPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2196F3),
                               disabledBackgroundColor:
-                                  const Color(0xFF2196F3).withOpacity(0.4),
+                                  const Color(0xFF2196F3).withValues(alpha: 0.4),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
@@ -380,6 +367,7 @@ class _VerificationPageState extends State<VerificationPage> {
               ),
             );
           },
+        ),
         ),
       ),
     );

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/reminder_notification_service.dart';
 
 class StudyRemindersPage extends StatefulWidget {
   const StudyRemindersPage({super.key});
@@ -10,11 +13,39 @@ class StudyRemindersPage extends StatefulWidget {
 class _StudyRemindersPageState extends State<StudyRemindersPage> {
   bool _dailyTargetEnabled = true;
   bool _streakReminderEnabled = true;
-  bool _smartNotifEnabled = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
   int _selectedFrequency = 0; // 0=Setiap hari, 1=Hari kerja
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
 
   final List<String> _frequencies = ['Setiap hari', 'Hari kerja'];
+
+  static const _dailyTargetKey = 'reminders_daily_target_enabled';
+  static const _streakKey = 'reminders_streak_enabled';
+  static const _frequencyKey = 'reminders_frequency';
+  static const _hourKey = 'reminders_time_hour';
+  static const _minuteKey = 'reminders_time_minute';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _dailyTargetEnabled = prefs.getBool(_dailyTargetKey) ?? true;
+      _streakReminderEnabled = prefs.getBool(_streakKey) ?? true;
+      _selectedFrequency = prefs.getInt(_frequencyKey) ?? 0;
+      _reminderTime = TimeOfDay(
+        hour: prefs.getInt(_hourKey) ?? 20,
+        minute: prefs.getInt(_minuteKey) ?? 0,
+      );
+      _isLoading = false;
+    });
+  }
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
@@ -23,6 +54,62 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
     );
     if (picked != null && mounted) {
       setState(() => _reminderTime = picked);
+    }
+  }
+
+  Future<void> _saveReminderSettings() async {
+    setState(() => _isSaving = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_dailyTargetKey, _dailyTargetEnabled);
+      await prefs.setBool(_streakKey, _streakReminderEnabled);
+      await prefs.setInt(_frequencyKey, _selectedFrequency);
+      await prefs.setInt(_hourKey, _reminderTime.hour);
+      await prefs.setInt(_minuteKey, _reminderTime.minute);
+
+      final notifications = ReminderNotificationService.instance;
+      await notifications.init();
+      await notifications.cancelAll();
+
+      if (_dailyTargetEnabled || _streakReminderEnabled) {
+        final granted = await notifications.requestPermission();
+        if (!granted) {
+          throw Exception('Izin notifikasi ditolak');
+        }
+
+        final weekdaysOnly = _selectedFrequency == 1;
+        if (_dailyTargetEnabled) {
+          await notifications.scheduleDailyTarget(
+            hour: _reminderTime.hour,
+            minute: _reminderTime.minute,
+            weekdaysOnly: weekdaysOnly,
+            includeStreakCopy: _streakReminderEnabled,
+          );
+        } else {
+          await notifications.scheduleStreakOnly(
+            hour: _reminderTime.hour,
+            minute: _reminderTime.minute,
+            weekdaysOnly: weekdaysOnly,
+          );
+        }
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pengingat berhasil disimpan!'),
+          backgroundColor: Color(0xFF4CAF50),
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan pengingat: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -41,23 +128,30 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
                   child: Column(
                     children: [
                       const SizedBox(height: 10),
-                      _buildHeader(),
-                      const SizedBox(height: 28),
-                      _buildSectionLabel('PENGINGAT AKTIF'),
-                      const SizedBox(height: 10),
-                      _buildRemindersCard(),
-                      const SizedBox(height: 24),
-                      _buildSectionLabel('FREKUENSI PENGINGAT'),
-                      const SizedBox(height: 10),
-                      _buildFrequencyCard(),
-                      const SizedBox(height: 32),
-                      _buildSaveButton(context),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 48),
+                          child: CircularProgressIndicator(),
+                        )
+                      else ...[
+                        _buildHeader(),
+                        const SizedBox(height: 28),
+                        _buildSectionLabel('PENGINGAT AKTIF'),
+                        const SizedBox(height: 10),
+                        _buildRemindersCard(),
+                        const SizedBox(height: 24),
+                        _buildSectionLabel('FREKUENSI PENGINGAT'),
+                        const SizedBox(height: 10),
+                        _buildFrequencyCard(),
+                        const SizedBox(height: 32),
+                        _buildSaveButton(context),
+                      ],
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+          ),
+        ],
         ),
       ),
     );
@@ -146,7 +240,7 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -168,13 +262,6 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
             subtitle: 'Jangan hentikan\nkemajuan Anda',
             value: _streakReminderEnabled,
             onChanged: (val) => setState(() => _streakReminderEnabled = val),
-          ),
-          Divider(height: 1, color: Colors.grey.shade100),
-          _reminderToggle(
-            title: 'Notifikasi Pintar',
-            subtitle: 'Dorongan\nberbasis AI',
-            value: _smartNotifEnabled,
-            onChanged: (val) => setState(() => _smartNotifEnabled = val),
           ),
         ],
       ),
@@ -220,7 +307,7 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF2196F3),
+            activeThumbColor: const Color(0xFF2196F3),
           ),
         ],
       ),
@@ -234,7 +321,7 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -304,15 +391,7 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pengingat berhasil disimpan!'),
-              backgroundColor: Color(0xFF4CAF50),
-            ),
-          );
-          Navigator.pop(context);
-        },
+        onPressed: _isSaving ? null : _saveReminderSettings,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF2196F3),
           shape: RoundedRectangleBorder(
@@ -320,14 +399,23 @@ class _StudyRemindersPageState extends State<StudyRemindersPage> {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        child: const Text(
-          'SIMPAN PENGINGAT',
-          style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 0.8),
-        ),
+        child: _isSaving
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'SIMPAN PENGINGAT',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.8),
+              ),
       ),
     );
   }

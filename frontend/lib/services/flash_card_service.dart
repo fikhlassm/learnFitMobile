@@ -31,11 +31,8 @@ class FlashcardService {
         final total = data['data']?['total'];
         return (total is int) ? total : 0;
       } else {
-        // Jika 403 atau error lain, print body untuk debugging
-        print('ERROR GET TOTAL BODY: ${response.body}');
       }
-    } catch (e) {
-      print('Error fetching total flashcards: $e');
+    } catch (_) {
     }
     return 0;
   }
@@ -43,15 +40,10 @@ class FlashcardService {
   static Future<List<dynamic>> getFlashcards({
     required int studySessionId,
   }) async {
-    print('FLASHCARD SESSION ID = $studySessionId');
-
     final response = await http.get(
       Uri.parse('${ApiConfig.flashcards}?study_session_id=$studySessionId'),
       headers: await _headers(),
     );
-
-    print('FLASHCARD GET STATUS = ${response.statusCode}');
-    print('FLASHCARD GET BODY = ${response.body}');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -74,8 +66,6 @@ class FlashcardService {
     required String question,
     required String answer,
   }) async {
-    print('CREATE FLASHCARD SESSION = $studySessionId');
-
     final response = await http.post(
       Uri.parse(ApiConfig.flashcards),
       headers: await _headers(),
@@ -85,9 +75,6 @@ class FlashcardService {
         'answer': answer,
       }),
     );
-
-    print('CREATE STATUS = ${response.statusCode}');
-    print('CREATE BODY = ${response.body}');
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to create flashcard');
@@ -108,9 +95,6 @@ class FlashcardService {
       }),
     );
 
-    print('UPDATE STATUS = ${response.statusCode}');
-    print('UPDATE BODY = ${response.body}');
-
     if (response.statusCode != 200) {
       throw Exception('Failed to update flashcard');
     }
@@ -123,9 +107,6 @@ class FlashcardService {
       Uri.parse(ApiConfig.flashcard(id)),
       headers: await _headers(),
     );
-
-    print('DELETE STATUS = ${response.statusCode}');
-    print('DELETE BODY = ${response.body}');
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete flashcard');

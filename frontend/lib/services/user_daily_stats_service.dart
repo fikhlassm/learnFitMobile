@@ -33,11 +33,9 @@ class UserDailyStatService {
 
         return [];
       } else {
-        print('Error Stats: ${response.statusCode} - ${response.body}');
         return [];
       }
     } catch (e) {
-      print('Exception Stats: $e');
       return []; // Return empty list agar UI tidak crash
     }
   }

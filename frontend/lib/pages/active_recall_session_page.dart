@@ -19,9 +19,14 @@ class ActiveRecallSessionPage extends StatefulWidget {
 
 class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
     with SingleTickerProviderStateMixin {
+  static const int _minLogSeconds = 15;
+
   int _currentIndex = 0;
   bool _showAnswer = false;
   bool _isLatihan = true;
+  bool _hasLoggedSession = false;
+  bool _isExiting = false;
+  bool _allowPop = false;
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
   List<Map<String, dynamic>> _cards = [];
@@ -32,6 +37,7 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
   @override
   void initState() {
     super.initState();
+    _sessionStartedAt = DateTime.now();
     _loadFlashcards();
     _flipController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -60,9 +66,7 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
         ),
       );
     });
-    if (mounted) _sessionStartedAt = DateTime.now();
-  } catch (e) {
-    print(e);
+  } catch (_) {
   }
 }
 
@@ -73,29 +77,11 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
   }
 
   try {
-    print(
-      'ADD FLASHCARD SESSION = ${widget.studySessionId}',
-    );
-
-    print(
-      'QUESTION = ${questionController.text}',
-    );
-
-    print(
-      'ANSWER = ${answerController.text}',
-    );
-
-print(
-  'BUTTON CLICKED',
-);
-
-await FlashcardService.createFlashcard(
+    await FlashcardService.createFlashcard(
       studySessionId: widget.studySessionId,
       question: questionController.text,
       answer: answerController.text,
     );
-
-    print('FLASHCARD CREATED');
 
     questionController.clear();
     answerController.clear();
@@ -103,16 +89,11 @@ await FlashcardService.createFlashcard(
     await _loadFlashcards();
 
     setState(() {
-      _isLatihan = true;
-
       if (_cards.isNotEmpty) {
         _currentIndex = _cards.length - 1;
       }
     });
-  } catch (e) {
-    print(
-      'FLASHCARD ERROR = $e',
-    );
+  } catch (_) {
   }
 }
 
@@ -155,32 +136,46 @@ await FlashcardService.createFlashcard(
     }
   }
 
-  Future<void> _selesaikanSesi() async {
+  Future<void> _exitSession() async {
+    if (_isExiting) return;
+    _isExiting = true;
+
     final seconds = _sessionStartedAt == null
-        ? 1
+        ? 0
         : DateTime.now().difference(_sessionStartedAt!).inSeconds.clamp(1, 86400);
 
-    try {
-      await SessionLogService.createSessionLog(
-        studySessionId: widget.studySessionId,
-        durationSeconds: seconds,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan catatan waktu')),
-      );
+    if (!_hasLoggedSession && seconds >= _minLogSeconds) {
+      _hasLoggedSession = true;
+      try {
+        await SessionLogService.createSessionLog(
+          studySessionId: widget.studySessionId,
+          durationSeconds: seconds,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menyimpan catatan waktu')),
+        );
+      }
     }
 
     if (!mounted) return;
+    setState(() => _allowPop = true);
     Navigator.pop(context, true);
   }
 
+  Future<void> _selesaikanSesi() => _exitSession();
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: SafeArea(
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _exitSession();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F6FA),
+        body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 16),
@@ -191,8 +186,9 @@ await FlashcardService.createFlashcard(
             _buildBottomButton(),
           ],
         ),
+        ),
+
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -203,7 +199,7 @@ await FlashcardService.createFlashcard(
       child: Row(
         children: [
           InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: _exitSession,
             borderRadius: BorderRadius.circular(8),
             child: const Icon(Icons.chevron_left, color: Color(0xFF2196F3), size: 28),
           ),
@@ -219,12 +215,7 @@ await FlashcardService.createFlashcard(
               ),
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.menu, color: Colors.black87, size: 22),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
+          const SizedBox(width: 36),
         ],
       ),
     );
@@ -735,12 +726,13 @@ await FlashcardService.createFlashcard(
   ),
 ),
           );
-        }).toList(),
+        }),
       ],
     ),
   );
 }
 
+  // ignore: unused_element
   Widget _buildInputField(
     String label,
     String hint,
@@ -881,47 +873,5 @@ Navigator.pop(context);
     );
   }
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -2)),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Icons.home_outlined, 'Home', false),
-              _navItem(Icons.article_outlined, 'Notebook', true),
-              _navItem(Icons.track_changes_outlined, 'Goals', false),
-              _navItem(Icons.person_outline, 'Profile', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _navItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 24, color: isActive ? const Color(0xFF2196F3) : Colors.grey[400]),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            color: isActive ? const Color(0xFF2196F3) : Colors.grey[400],
-          ),
-        ),
-      ],
-    );
-  }
 }

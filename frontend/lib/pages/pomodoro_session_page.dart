@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/session_log_service.dart';
 import '../services/study_session_service.dart';
-import 'notebook_page.dart';
 
 class PomodoroSessionPage extends StatefulWidget{
   final String topicTitle;
@@ -83,12 +82,7 @@ Future<void> _loadSessionData() async {
 
     });
 
-  } catch (e) {
-
-    print(
-      'LOAD SESSION ERROR = $e',
-    );
-
+  } catch (_) {
   }
 }
 
@@ -243,12 +237,7 @@ Future<void> _loadSessionData() async {
 
     _circleAnimController.reset();
 
-  } catch (e) {
-
-    print(
-      'SESSION ERROR = $e',
-    );
-
+  } catch (_) {
   }
 
   if (!mounted) return;
@@ -300,8 +289,6 @@ Future<void> _loadSessionData() async {
         ),
       ),
 
-      bottomNavigationBar:
-          _buildBottomNav(),
     );
   }
 
@@ -356,21 +343,7 @@ Future<void> _loadSessionData() async {
             ),
           ),
 
-          IconButton(
-            onPressed: () {},
-
-            icon: const Icon(
-              Icons.menu,
-              color: Colors.black87,
-              size: 22,
-            ),
-
-            padding:
-                EdgeInsets.zero,
-
-            constraints:
-                const BoxConstraints(),
-          ),
+          const SizedBox(width: 36),
         ],
       ),
     );
@@ -396,7 +369,7 @@ Future<void> _loadSessionData() async {
 
           BoxShadow(
             color: Colors.black
-                .withOpacity(0.04),
+                .withValues(alpha: 0.04),
 
             blurRadius: 8,
 
@@ -579,7 +552,7 @@ Future<void> _loadSessionData() async {
 
           BoxShadow(
             color: Colors.black
-                .withOpacity(0.04),
+                .withValues(alpha: 0.04),
 
             blurRadius: 8,
 
@@ -845,115 +818,5 @@ Future<void> _loadSessionData() async {
     );
   }
 
-  Widget _buildBottomNav() {
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-        boxShadow: [
-
-          BoxShadow(
-            color: Colors.black
-                .withOpacity(0.06),
-
-            blurRadius: 12,
-
-            offset:
-                const Offset(0, -2),
-          ),
-        ],
-      ),
-
-      child: SafeArea(
-        top: false,
-
-        child: Padding(
-          padding:
-              const EdgeInsets
-                  .symmetric(
-            vertical: 8,
-          ),
-
-          child: Row(
-            mainAxisAlignment:
-                MainAxisAlignment
-                    .spaceAround,
-
-            children: [
-
-              _navItem(
-                Icons.home_outlined,
-                'Home',
-                false,
-              ),
-
-              _navItem(
-                Icons.article_outlined,
-                'Notebook',
-                true,
-              ),
-
-              _navItem(
-                Icons.track_changes_outlined,
-                'Goals',
-                false,
-              ),
-
-              _navItem(
-                Icons.person_outline,
-                'Profile',
-                false,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(
-    IconData icon,
-    String label,
-    bool isActive,
-  ) {
-
-    return Column(
-      mainAxisSize:
-          MainAxisSize.min,
-
-      children: [
-
-        Icon(
-          icon,
-
-          size: 24,
-
-          color: isActive
-              ? const Color(
-                  0xFF2196F3)
-              : Colors.grey[400],
-        ),
-
-        const SizedBox(height: 3),
-
-        Text(
-          label,
-
-          style: TextStyle(
-            fontSize: 11,
-
-            fontWeight: isActive
-                ? FontWeight.w600
-                : FontWeight.w400,
-
-            color: isActive
-                ? const Color(
-                    0xFF2196F3)
-                : Colors.grey[400],
-          ),
-        ),
-      ],
-    );
-  }
 }

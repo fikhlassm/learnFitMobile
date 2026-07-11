@@ -31,8 +31,7 @@ class _HomeApiService {
         final body = jsonDecode(res.body) as Map<String, dynamic>;
         return body['data'] as Map<String, dynamic>;
       }
-    } catch (e) {
-      print('Error fetchProfile: $e');
+    } catch (_) {
     }
     return {};
   }
@@ -54,8 +53,7 @@ class _HomeApiService {
             );
         return match;
       }
-    } catch (e) {
-      print('Error fetchDailyStat: $e');
+    } catch (_) {
     }
     return {'total_seconds': 0};
   }
@@ -140,7 +138,7 @@ class _BottomNav extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 14,
             offset: const Offset(0, -2),
           ),
@@ -155,7 +153,7 @@ class _BottomNav extends StatelessWidget {
             children: [
               _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home', isActive: selectedIndex == 0, onTap: () => onTap(0)),
               _NavItem(icon: Icons.article_outlined, activeIcon: Icons.article_rounded, label: 'Notebook', isActive: selectedIndex == 1, onTap: () => onTap(1)),
-              _NavItem(icon: Icons.track_changes_outlined, activeIcon: Icons.track_changes_rounded, label: 'Goals', isActive: selectedIndex == 2, onTap: () => onTap(2)),
+              _NavItem(icon: Icons.track_changes_outlined, activeIcon: Icons.track_changes_rounded, label: 'Statistic', isActive: selectedIndex == 2, onTap: () => onTap(2)),
               _NavItem(icon: Icons.person_outline, activeIcon: Icons.person_rounded, label: 'Profile', isActive: selectedIndex == 3, onTap: () => onTap(3)),
             ],
           ),
@@ -288,7 +286,6 @@ class _HomeContentState extends State<_HomeContent> {
         _loading = false;
       });
     } catch (e) {
-      print('Error loading home data: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -440,15 +437,7 @@ class _HomeContentState extends State<_HomeContent> {
               ],
             ),
           ),
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)],
-            ),
-            child: const Icon(Icons.notifications_none_rounded, color: Colors.black87, size: 22),
-          ),
+
         ],
       ),
     );
@@ -478,7 +467,7 @@ class _HomeContentState extends State<_HomeContent> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Column(
           children: [
@@ -550,20 +539,20 @@ class _HomeContentState extends State<_HomeContent> {
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
                   child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 16),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(progressLabel, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.85))),
+            Text(progressLabel, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.85))),
             const SizedBox(height: 14),
             // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: Colors.white.withOpacity(0.3),
+                backgroundColor: Colors.white.withValues(alpha: 0.3),
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 minHeight: 7,
               ),
@@ -577,9 +566,9 @@ class _HomeContentState extends State<_HomeContent> {
                   _targetMinutes > 0
                       ? 'FOKUS: $_dailyFocus / $targetLabel'
                       : 'FOKUS HARI INI: $_dailyFocus',
-                  style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85), fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
                 ),
-                Text(remainingLabel, style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.85))),
+                Text(remainingLabel, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.85))),
               ],
             ),
             const SizedBox(height: 14),
@@ -590,9 +579,9 @@ class _HomeContentState extends State<_HomeContent> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -700,13 +689,13 @@ class _HomeContentState extends State<_HomeContent> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: Row(
         children: [
           Container(
             width: 48, height: 48,
-            decoration: BoxDecoration(color: data.color.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: data.color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
             child: Icon(data.icon, color: data.color, size: 24),
           ),
           const SizedBox(width: 14),

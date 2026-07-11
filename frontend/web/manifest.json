@@ -1,11 +1,11 @@
 {
-    "name": "learnfitmob",
-    "short_name": "learnfitmob",
+    "name": "LearnFit",
+    "short_name": "LearnFit",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Aplikasi belajar dengan teknik Pomodoro, Feynman, Active Recall, dan Blurting.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

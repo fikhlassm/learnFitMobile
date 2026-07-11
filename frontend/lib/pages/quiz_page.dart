@@ -349,7 +349,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withOpacity(0.1),
+                    color: const Color(0xFF2196F3).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -385,7 +385,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -417,7 +417,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF2196F3).withOpacity(0.06) : Colors.white,
+                                color: isSelected ? const Color(0xFF2196F3).withValues(alpha: 0.06) : Colors.white,
                                 borderRadius: BorderRadius.circular(50),
                                 border: Border.all(
                                   color: isSelected ? const Color(0xFF2196F3) : Colors.transparent,
@@ -425,7 +425,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.03),
+                                    color: Colors.black.withValues(alpha: 0.03),
                                     blurRadius: 6,
                                     offset: const Offset(0, 1),
                                   ),
@@ -438,7 +438,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
                                     height: 36,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? const Color(0xFF2196F3).withOpacity(0.15)
+                                          ? const Color(0xFF2196F3).withValues(alpha: 0.15)
                                           : const Color(0xFFE8F0FE),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -496,7 +496,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
                       onPressed: (_selectedAnswer != null && !_isLoading) ? _next : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
-                        disabledBackgroundColor: const Color(0xFF2196F3).withOpacity(0.4),
+                        disabledBackgroundColor: const Color(0xFF2196F3).withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         elevation: 0,
                       ),

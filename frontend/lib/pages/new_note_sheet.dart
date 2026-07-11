@@ -164,10 +164,6 @@ Future<void> _startSession(
           techniqueId,
     );
 
-    print(
-      'CREATE SESSION RESPONSE = $response',
-    );
-
     final sessionId =
     response['data']['id'];
 
@@ -201,24 +197,22 @@ switch (_selectedMethod) {
     route = '/feynman-session';
 }
 
-final result =
-    await Navigator.pushNamed(
+await Navigator.pushNamed(
   context,
   route,
   arguments: args,
 );
 
-if (result == true && mounted) {
-  Navigator.pop(
+if (mounted) {
+  Navigator.pushNamedAndRemoveUntil(
     context,
-    true,
+    '/home',
+    (route) => false,
+    arguments: {'initialIndex': 1},
   );
 }
   } catch (e) {
-    print(
-      'CREATE SESSION ERROR = $e',
-    );
-
+    if (!btnContext.mounted) return;
     ScaffoldMessenger.of(
       btnContext,
     ).showSnackBar(
@@ -444,8 +438,8 @@ Widget _buildMethodCard(
                     BoxDecoration(
                   color: isSelected
                       ? method.color
-                          .withOpacity(
-                              0.15)
+                          .withValues(
+                              alpha: 0.15)
                       : const Color(
                           0xFFEEEEEE),
 
