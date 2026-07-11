@@ -22,7 +22,7 @@ class EvaluationController extends Controller implements HasMiddleware
     public function evaluate(Request $request, StudySession $studySession)
     {
         $request->validate([
-            'text' => ['required', 'min:10'],
+            'text' => ['required', 'string', 'min:3'],
         ]);
 
         $prompt = $request->text;
