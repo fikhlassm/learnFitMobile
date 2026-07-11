@@ -43,7 +43,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'question': 'Berapa lama Anda bisa bertahan belajar tanpa kehilangan konsentrasi sama sekali?',
       'answers': [
         {'icon': Icons.timer_outlined, 'text': 'Sangat singkat, kurang dari 15 menit', 'scores': [2, 0, 0, 0]},
-        {'icon': Icons.hourglass_bottom_outlined, 'text': 'Lumayan, sekitar 15–30 menit', 'scores': [1, 0, 0, 0]},
+        {'icon': Icons.hourglass_bottom_outlined, 'text': 'Lumayan, sekitar 15–30 menit', 'scores': [1, 0, 0, 1]},
         {'icon': Icons.bolt_outlined, 'text': 'Lama, bisa lebih dari 30 menit tanpa henti', 'scores': [0, 1, 0, 0]},
       ],
     },
@@ -53,7 +53,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'dimensi': 'Gaya Belajar',
       'question': 'Saat belajar materi baru, Anda paling cepat mengerti jika melalui...',
       'answers': [
-        {'icon': Icons.image_outlined, 'text': 'Gambar, grafik, atau coretan konsep', 'scores': [0, 0, 1, 0]},
+        {'icon': Icons.image_outlined, 'text': 'Gambar, grafik, atau coretan konsep', 'scores': [0, 0, 1, 1]},
         {'icon': Icons.hearing_outlined, 'text': 'Mendengarkan penjelasan orang lain', 'scores': [0, 0, 1, 0]},
         {'icon': Icons.touch_app_outlined, 'text': 'Latihan soal atau praktik langsung', 'scores': [0, 1, 0, 0]},
       ],
@@ -64,7 +64,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'dimensi': 'Tujuan Belajar',
       'question': 'Apa target utama Anda saat sedang belajar?',
       'answers': [
-        {'icon': Icons.format_list_numbered_outlined, 'text': 'Utamanya menghafal fakta, istilah, atau rumus', 'scores': [0, 2, 0, 0]},
+        {'icon': Icons.format_list_numbered_outlined, 'text': 'Utamanya menghafal fakta, istilah, atau rumus', 'scores': [0, 2, 0, 1]},
         {'icon': Icons.balance_outlined, 'text': 'Seimbang antara menghafal dan paham konsep', 'scores': [0, 0, 0, 0]},
         {'icon': Icons.psychology_outlined, 'text': 'Benar-benar memahami konsep utuhnya secara mendalam', 'scores': [0, 0, 2, 0]},
       ],
@@ -108,7 +108,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'dimensi': 'Kebutuhan Interaksi',
       'question': 'Jika disuruh memilih, Anda lebih nyaman belajar dalam situasi...',
       'answers': [
-        {'icon': Icons.person_outlined, 'text': 'Sendirian di tempat yang tenang', 'scores': [0, 1, 0, 0]},
+        {'icon': Icons.person_outlined, 'text': 'Sendirian di tempat yang tenang', 'scores': [0, 1, 0, 1]},
         {'icon': Icons.groups_outlined, 'text': 'Bersama teman atau dalam kelompok belajar', 'scores': [0, 0, 2, 0]},
       ],
     },
@@ -118,7 +118,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'dimensi': 'Preferensi Pengulangan',
       'question': 'Apakah Anda tipe orang yang suka me-review/mengulang materi sedikit demi sedikit di hari yang berbeda?',
       'answers': [
-        {'icon': Icons.repeat_outlined, 'text': 'Sangat suka, saya selalu mereview berkala', 'scores': [0, 2, 0, 0]},
+        {'icon': Icons.repeat_outlined, 'text': 'Sangat suka, saya selalu mereview berkala', 'scores': [0, 2, 0, 2]},
         {'icon': Icons.sync_outlined, 'text': 'Kadang-kadang kalau sempat', 'scores': [0, 0, 0, 0]},
         {'icon': Icons.alarm_outlined, 'text': 'Tidak, saya lebih suka SKS (Sistem Kebut Semalam)', 'scores': [1, 0, 0, 0]},
       ],
@@ -151,7 +151,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'question': '"Saya bisa duduk diam belajar lebih dari 45 menit terus-menerus tanpa terdistraksi."',
       'answers': [
         {'icon': Icons.check_outlined, 'text': 'Benar / Ya', 'scores': [0, 1, 0, 0]},
-        {'icon': Icons.close_outlined, 'text': 'Salah / Tidak', 'scores': [2, 0, 0, 0]},
+        {'icon': Icons.close_outlined, 'text': 'Salah / Tidak', 'scores': [2, 0, 0, 1]},
       ],
     },
     // Q12 – Minat Mengajar
@@ -162,7 +162,7 @@ class _QuizPageState extends State<QuizPage> with TickerProviderStateMixin {
       'answers': [
         {'icon': Icons.favorite_outline, 'text': 'Sangat menikmati dan suka', 'scores': [0, 0, 2, 0]},
         {'icon': Icons.remove_outlined, 'text': 'Biasa saja', 'scores': [0, 0, 0, 0]},
-        {'icon': Icons.person_off_outlined, 'text': 'Tidak suka, saya mending menyerap untuk diri sendiri', 'scores': [0, 1, 0, 0]},
+        {'icon': Icons.person_off_outlined, 'text': 'Tidak suka, saya mending menyerap untuk diri sendiri', 'scores': [0, 1, 0, 2]},
       ],
     },
   ];

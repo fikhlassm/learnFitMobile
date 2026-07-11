@@ -22,6 +22,7 @@ class FeynmanSessionPage extends StatefulWidget {
 
 class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   static const int _minLogSeconds = 15;
+  static const int _minNotesChars = 3;
 
   late final TextEditingController _titleController;
   final TextEditingController _notesController = TextEditingController();
@@ -31,8 +32,8 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   bool _isExiting = false;
   bool _allowPop = false;
   String _responseText = '';
-  File? _attachedFile;
-  String? _attachedFileName;
+  Attachment? _remoteAttachment; // persisted source file (source of truth)
+  bool _isFileBusy = false; // uploading or deleting a file
   DateTime? _sessionStartedAt;
 
   @override
@@ -41,6 +42,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     _sessionStartedAt = DateTime.now();
     _titleController = TextEditingController(text: widget.topicTitle);
     _loadSessionData();
+    _loadAttachment();
   }
 
   Future<void> _loadSessionData() async {
@@ -56,6 +58,18 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     } catch (_) {}
   }
 
+  // Restore any file already persisted for this session so the UI reflects the
+  // real backend state on re-entry (refresh, re-open, resumed session).
+  Future<void> _loadAttachment() async {
+    if (widget.studySessionId == 0) return;
+    try {
+      final attachments =
+          await AttachmentService.list(widget.studySessionId);
+      if (!mounted || attachments.isEmpty) return;
+      setState(() => _remoteAttachment = attachments.first);
+    } catch (_) {}
+  }
+
   void _saveTitle() {
     if (widget.studySessionId == 0) return;
     final newTitle = _titleController.text.trim();
@@ -68,6 +82,14 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   }
 
   Future<void> _pickFile() async {
+    if (_isFileBusy) return;
+    if (widget.studySessionId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sesi tidak valid')),
+      );
+      return;
+    }
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['txt', 'md', 'pdf'],
@@ -83,16 +105,72 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
       );
       return;
     }
-    setState(() {
-      _attachedFile = file;
-      _attachedFileName = result.files.single.name;
-    });
+
+    // Upload immediately so the persisted state always matches the UI. If the
+    // user leaves right after, the file is already saved (or never was).
+    setState(() => _isFileBusy = true);
+    try {
+      // Replace any existing source: remove the old one first to avoid
+      // leaving an orphaned file on the backend.
+      if (_remoteAttachment != null) {
+        await AttachmentService.delete(
+          studySessionId: widget.studySessionId,
+          attachmentId: _remoteAttachment!.id,
+        );
+      }
+      final uploaded = await AttachmentService.upload(
+        studySessionId: widget.studySessionId,
+        file: file,
+      );
+      if (!mounted) return;
+      setState(() {
+        _remoteAttachment = uploaded;
+        _isFileBusy = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isFileBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    }
+  }
+
+  // Propagate deletion to the backend so record + storage + chunks are removed
+  // and no orphaned data remains. UI only clears after the server confirms.
+  Future<void> _deleteFile() async {
+    if (_isFileBusy || _remoteAttachment == null) return;
+    if (widget.studySessionId == 0) return;
+
+    setState(() => _isFileBusy = true);
+    try {
+      await AttachmentService.delete(
+        studySessionId: widget.studySessionId,
+        attachmentId: _remoteAttachment!.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _remoteAttachment = null;
+        _isFileBusy = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isFileBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    }
   }
 
   Future<void> _cekPemahaman() async {
-    if (_notesController.text.trim().isEmpty) return;
+    if (_notesController.text.trim().length < _minNotesChars) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tulis minimal 3 karakter')),
+      );
+      return;
+    }
 
-    if (_attachedFile == null) {
+    if (_remoteAttachment == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Dokumen sumber wajib dilampirkan terlebih dahulu'),
@@ -114,11 +192,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     });
 
     try {
-      await AttachmentService.upload(
-        studySessionId: widget.studySessionId,
-        file: _attachedFile!,
-      );
-
+      // File already uploaded at pick time; go straight to evaluation.
       final feedback = await EvaluationService.evaluate(
         studySessionId: widget.studySessionId,
         text: _notesController.text,
@@ -315,7 +389,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 0, 16, 14),
               child: ElevatedButton(
-                onPressed: _notesController.text.trim().isNotEmpty
+                onPressed: _notesController.text.trim().length >= _minNotesChars
                     ? _cekPemahaman
                     : null,
                 style: ElevatedButton.styleFrom(
@@ -344,46 +418,49 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   }
 
   Widget _buildAddFileButton() {
+    final hasFile = _remoteAttachment != null;
     return GestureDetector(
-      onTap: _pickFile,
+      onTap: _isFileBusy ? null : _pickFile,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _attachedFile != null
+            color: hasFile
                 ? const Color(0xFF4CAF50)
                 : const Color(0xFFE8E8E8),
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              _attachedFile != null ? Icons.attach_file : Icons.add,
-              size: 18,
-              color: _attachedFile != null
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFF999999),
-            ),
+            if (_isFileBusy)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                hasFile ? Icons.attach_file : Icons.add,
+                size: 18,
+                color: hasFile
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFF999999),
+              ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                _attachedFileName ?? 'Tambahkan file materi ...',
+                _remoteAttachment?.fileName ?? 'Tambahkan file materi ...',
                 style: TextStyle(
                   fontSize: 13.5,
-                  color: _attachedFile != null
-                      ? Colors.black87
-                      : Colors.grey[400],
+                  color: hasFile ? Colors.black87 : Colors.grey[400],
                 ),
               ),
             ),
-            if (_attachedFile != null)
+            if (hasFile && !_isFileBusy)
               GestureDetector(
-                onTap: () => setState(() {
-                  _attachedFile = null;
-                  _attachedFileName = null;
-                }),
+                onTap: _deleteFile,
                 child: const Icon(Icons.close, size: 18, color: Colors.red),
               ),
           ],

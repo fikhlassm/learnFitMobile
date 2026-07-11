@@ -39,6 +39,8 @@ class ApiConfig {
   static String studySession(int id) => '$_host/study-sessions/$id';
   static String studySessionAttachment(int id) =>
       '$_host/study-sessions/$id/attachments';
+  static String studySessionAttachmentItem(int sessionId, int attachmentId) =>
+      '$_host/study-sessions/$sessionId/attachments/$attachmentId';
   static String studySessionEvaluate(int id) =>
       '$_host/study-sessions/$id/evaluate';
 
