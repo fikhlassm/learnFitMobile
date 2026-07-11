@@ -42,6 +42,9 @@ class ApiConfig {
   static String studySessionEvaluate(int id) =>
       '$_host/study-sessions/$id/evaluate';
 
+  // support
+  static String get support => '$_host/support';
+
   // session logs
   static String get sessionLogs => '$_host/session-logs';
 }

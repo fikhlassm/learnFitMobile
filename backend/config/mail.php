@@ -113,4 +113,6 @@ return [
         'name' => env('MAIL_FROM_NAME', 'LearnFit'),
     ],
 
+    'support_address' => env('SUPPORT_EMAIL', env('MAIL_FROM_ADDRESS')),
+
 ];
