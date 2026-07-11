@@ -32,7 +32,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   bool _isExiting = false;
   bool _allowPop = false;
   String _responseText = '';
-  Attachment? _remoteAttachment; // persisted source file (source of truth)
+  List<Attachment> _remoteAttachments = []; // persisted source files
   bool _isFileBusy = false; // uploading or deleting a file
   DateTime? _sessionStartedAt;
 
@@ -65,8 +65,8 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     try {
       final attachments =
           await AttachmentService.list(widget.studySessionId);
-      if (!mounted || attachments.isEmpty) return;
-      setState(() => _remoteAttachment = attachments.first);
+      if (!mounted) return;
+      setState(() => _remoteAttachments = attachments);
     } catch (_) {}
   }
 
@@ -110,21 +110,13 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
     // user leaves right after, the file is already saved (or never was).
     setState(() => _isFileBusy = true);
     try {
-      // Replace any existing source: remove the old one first to avoid
-      // leaving an orphaned file on the backend.
-      if (_remoteAttachment != null) {
-        await AttachmentService.delete(
-          studySessionId: widget.studySessionId,
-          attachmentId: _remoteAttachment!.id,
-        );
-      }
       final uploaded = await AttachmentService.upload(
         studySessionId: widget.studySessionId,
         file: file,
       );
       if (!mounted) return;
       setState(() {
-        _remoteAttachment = uploaded;
+        _remoteAttachments = [..._remoteAttachments, uploaded];
         _isFileBusy = false;
       });
     } catch (e) {
@@ -138,19 +130,21 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
 
   // Propagate deletion to the backend so record + storage + chunks are removed
   // and no orphaned data remains. UI only clears after the server confirms.
-  Future<void> _deleteFile() async {
-    if (_isFileBusy || _remoteAttachment == null) return;
+  Future<void> _deleteFile(Attachment attachment) async {
+    if (_isFileBusy) return;
     if (widget.studySessionId == 0) return;
 
     setState(() => _isFileBusy = true);
     try {
       await AttachmentService.delete(
         studySessionId: widget.studySessionId,
-        attachmentId: _remoteAttachment!.id,
+        attachmentId: attachment.id,
       );
       if (!mounted) return;
       setState(() {
-        _remoteAttachment = null;
+        _remoteAttachments = _remoteAttachments
+            .where((item) => item.id != attachment.id)
+            .toList();
         _isFileBusy = false;
       });
     } catch (e) {
@@ -170,7 +164,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
       return;
     }
 
-    if (_remoteAttachment == null) {
+    if (_remoteAttachments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Dokumen sumber wajib dilampirkan terlebih dahulu'),
@@ -418,7 +412,46 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
   }
 
   Widget _buildAddFileButton() {
-    final hasFile = _remoteAttachment != null;
+    return Column(
+      children: [
+        for (final attachment in _remoteAttachments) ...[
+          _buildAttachmentTile(attachment),
+          const SizedBox(height: 8),
+        ],
+        _buildEmptyAttachmentTile(),
+      ],
+    );
+  }
+
+  Widget _buildAttachmentTile(Attachment attachment) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF4CAF50)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.attach_file, size: 18, color: Color(0xFF4CAF50)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              attachment.fileName,
+              style: const TextStyle(fontSize: 13.5, color: Colors.black87),
+            ),
+          ),
+          if (!_isFileBusy)
+            GestureDetector(
+              onTap: () => _deleteFile(attachment),
+              child: const Icon(Icons.close, size: 18, color: Colors.red),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyAttachmentTile() {
     return GestureDetector(
       onTap: _isFileBusy ? null : _pickFile,
       child: Container(
@@ -426,11 +459,7 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: hasFile
-                ? const Color(0xFF4CAF50)
-                : const Color(0xFFE8E8E8),
-          ),
+          border: Border.all(color: const Color(0xFFE8E8E8)),
         ),
         child: Row(
           children: [
@@ -441,28 +470,12 @@ class _FeynmanSessionPageState extends State<FeynmanSessionPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              Icon(
-                hasFile ? Icons.attach_file : Icons.add,
-                size: 18,
-                color: hasFile
-                    ? const Color(0xFF4CAF50)
-                    : const Color(0xFF999999),
-              ),
+              const Icon(Icons.add, size: 18, color: Color(0xFF999999)),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                _remoteAttachment?.fileName ?? 'Tambahkan file materi ...',
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: hasFile ? Colors.black87 : Colors.grey[400],
-                ),
-              ),
+            Text(
+              'Tambahkan file materi ...',
+              style: TextStyle(fontSize: 13.5, color: Colors.grey[400]),
             ),
-            if (hasFile && !_isFileBusy)
-              GestureDetector(
-                onTap: _deleteFile,
-                child: const Icon(Icons.close, size: 18, color: Colors.red),
-              ),
           ],
         ),
       ),

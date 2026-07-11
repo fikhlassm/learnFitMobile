@@ -87,19 +87,15 @@ class AttachmentController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, StudySession $studySession, Attachment $attachment)
     {
-        // Remove the DB record and its derived document chunks atomically so no
-        // orphaned rows survive if something fails midway.
         DB::transaction(function () use ($attachment) {
             DocumentChunk::query()
                 ->where('study_session_id', $attachment->study_session_id)
-                ->where('metadata->attachment_id', $attachment->id)
+                ->whereJsonContains('metadata->attachment_id', $attachment->id)
                 ->delete();
 
             $attachment->delete();
         });
 
-        // Storage cleanup happens after the record is gone; guard against a
-        // missing/blank path so a re-delete or partial upload can't error.
         if ($attachment->stored_path && Storage::disk('study-materials')->exists($attachment->stored_path)) {
             Storage::disk('study-materials')->delete($attachment->stored_path);
         }
