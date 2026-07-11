@@ -88,6 +88,7 @@ class _NewNoteSheetState
       TextEditingController();
 
   String? _selectedMethod;
+  bool _isStarting = false;
 
   @override
   void initState() {
@@ -109,6 +110,7 @@ Future<void> _startSession(
   final title =
       _titleController.text.trim();
 
+  if (_isStarting) return;
   if (title.isEmpty) {
     ScaffoldMessenger.of(
       btnContext,
@@ -134,6 +136,8 @@ Future<void> _startSession(
     );
     return;
   }
+
+  setState(() => _isStarting = true);
 
   try {
     int techniqueId = 1;
@@ -222,6 +226,8 @@ if (mounted) {
         ),
       ),
     );
+  } finally {
+    if (mounted) setState(() => _isStarting = false);
   }
 }
 
@@ -342,7 +348,7 @@ if (mounted) {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => _startSession(context),
+                  onPressed: _isStarting ? null : () => _startSession(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2196F3),
                     foregroundColor: Colors.white,
@@ -350,10 +356,19 @@ if (mounted) {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [Text('Start Session', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)), SizedBox(width: 6), Icon(Icons.arrow_forward_rounded, size: 18)],
-                  ),
+                  child: _isStarting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [Text('Start Session', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)), SizedBox(width: 6), Icon(Icons.arrow_forward_rounded, size: 18)],
+                        ),
                 ),
               ),
               

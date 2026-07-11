@@ -26,6 +26,7 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
   bool _isLatihan = true;
   bool _hasLoggedSession = false;
   bool _isExiting = false;
+  bool _isAddingFlashcard = false;
   bool _allowPop = false;
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
@@ -71,10 +72,13 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
 }
 
   Future<void> _addFlashcard() async {
+  if (_isAddingFlashcard) return;
   if (questionController.text.isEmpty ||
       answerController.text.isEmpty) {
     return;
   }
+
+  setState(() => _isAddingFlashcard = true);
 
   try {
     await FlashcardService.createFlashcard(
@@ -89,11 +93,13 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
     await _loadFlashcards();
 
     setState(() {
+      _isAddingFlashcard = false;
       if (_cards.isNotEmpty) {
         _currentIndex = _cards.length - 1;
       }
     });
   } catch (_) {
+    if (mounted) setState(() => _isAddingFlashcard = false);
   }
 }
 
@@ -555,25 +561,34 @@ class _ActiveRecallSessionPageState extends State<ActiveRecallSessionPage>
 
               Align(
                 alignment: Alignment.centerRight,
-                child: SizedBox(
-                  width: 100,
-                  height: 42,
-                  child: ElevatedButton(
-                    onPressed: _addFlashcard,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF29B6F6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 100,
+                    height: 42,
+                    child: ElevatedButton(
+                      onPressed: _isAddingFlashcard ? null : _addFlashcard,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF29B6F6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Simpan',
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
+                      child: _isAddingFlashcard
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Simpan',
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
-                ),
               ),
             ],
           ),
